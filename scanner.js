@@ -522,7 +522,7 @@ function noiseOf(p, config = DEFAULT_CONFIG) {
   const s = (typeof p === 'string' ? p : p.path).split(String.fromCharCode(92)).join('/')
   const parts = [
     '/appdata/', '/resources/app', '/microsoft vs code/', '/_clone_tmp_/',
-    '/$recycle.bin/', '/cache/uv/', '/resources/node-repl/', '/runtime/freevideo/',
+    '/$recycle.bin/', '/cache/uv/', '/resources/node-repl/',
     ...(config.noisePatterns || []).map((x) => String(x).split(String.fromCharCode(92)).join('/')),
   ]
   if (parts.some((part) => s.toLowerCase().includes(part.toLowerCase()))) {

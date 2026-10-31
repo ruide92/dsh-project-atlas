@@ -13,7 +13,7 @@ endorsement.
 | `earth-blue-marble.jpg` | [NASA Visible Earth: Blue Marble — Land Surface, Shallow Water, and Shaded Topography](https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg) | 2048 × 1024 JPEG | Re-encoded as JPEG quality 90, metadata stripped |
 | `earth-night.jpg` | [NASA Earth Observatory: Black Marble 2012](https://eoimages.gsfc.nasa.gov/images/imagerecords/79000/79765/dnb_land_ocean_ice.2012.3600x1800.jpg) | 3600 × 1800 JPEG | Re-encoded as JPEG quality 90, metadata stripped |
 
-Retrieved 2026-11-01. SHA-256 of the bundled files:
+Retrieved 2026-10-31. SHA-256 of the bundled files:
 
 ```text
 35789c9254ffe832aff2c8c6e2d79d4ec2e5fac13c3b205dc4f6c8f7d1300c7f  assets/earth-blue-marble.jpg
