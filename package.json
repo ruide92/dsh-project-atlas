@@ -1,6 +1,6 @@
 {
   "name": "dsh-project-atlas",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Project Atlas — 可视化项目工作台：只读索引本地 AI 项目、技能、会话与产出。",
   "type": "module",
   "license": "MIT",
