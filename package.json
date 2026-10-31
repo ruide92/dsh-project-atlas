@@ -1,0 +1,82 @@
+{
+  "name": "dsh-project-atlas",
+  "version": "1.0.0",
+  "description": "Project Atlas — 可视化项目工作台：只读索引本地 AI 项目、技能、会话与产出。",
+  "type": "module",
+  "license": "MIT",
+  "private": false,
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test test/config.test.mjs test/digest.test.mjs test/session-files.test.mjs test/project-model.test.mjs test/followup.test.mjs test/runtime.test.mjs test/project-lifecycle.test.mjs test/skills.test.mjs test/codex-sessions.test.mjs test/earth-flight.test.mjs test/earth-geo.test.mjs test/handoff-p0.test.mjs test/empty-state.test.mjs test/host-smoke.mjs",
+    "check": "node --check index.js && node --check client.js && node --check digest.js && node --check scanner.js && node --check project-model.js && node --check followup.js && node --check runtime.js && node --check project-lifecycle.js && node --check skills.js && node --check codex-sessions.js && node --check truth-docs.js"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./runtime": "./runtime.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json",
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "index.js",
+    "scanner.js",
+    "digest.js",
+    "project-model.js",
+    "followup.js",
+    "runtime.js",
+    "project-lifecycle.js",
+    "skills.js",
+    "codex-sessions.js",
+    "truth-docs.js",
+    "client.js",
+    "config.js",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "ASSET-LICENSES.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    },
+    "install": {
+      "preferred": "tarball",
+      "tarball": "https://github.com/ruide92/dsh-project-atlas/archive/refs/heads/main.tar.gz",
+      "zip": "https://github.com/ruide92/dsh-project-atlas/archive/refs/heads/main.zip",
+      "git": "https://github.com/ruide92/dsh-project-atlas.git"
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruide92/dsh-project-atlas.git"
+  },
+  "homepage": "https://github.com/ruide92/dsh-project-atlas#readme",
+  "bugs": {
+    "url": "https://github.com/ruide92/dsh-project-atlas/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "project-dashboard",
+    "visualization"
+  ]
+}
