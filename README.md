@@ -80,7 +80,7 @@ node <DSH 内置 pnpm 路径> add github:ruide92/dsh-project-atlas
 ## 开发
 
 ```bash
-npm test        # 51 项测试
+npm test        # 52 项测试
 npm run check   # 语法检查
 ```
 

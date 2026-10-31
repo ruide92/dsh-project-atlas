@@ -4,7 +4,7 @@
 
 - Node.js >= 22.18（使用 `node:sqlite`）
 - DSH >= 0.2.0-rc.1
-- Windows / macOS / Linux 均可运行 Host 端；桌面端路径以实际安装为准
+- 以 Windows 上的 DSH 桌面端为主要支持环境；macOS / Linux 可运行 Host 端，但磁盘、回收站、资源管理器等 Windows 专属能力会降级或不可用
 
 ## 本地检查
 
@@ -13,7 +13,7 @@ npm test
 npm run check
 ```
 
-`npm test` 覆盖配置、扫描、项目模型、技能索引、会话读取、空状态和固定开场白等 51 项测试。
+`npm test` 覆盖配置、扫描、项目模型、技能索引、会话读取、空状态和固定开场白等 52 项测试。
 
 ## 临时安装验证
 
