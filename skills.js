@@ -37,7 +37,7 @@ const ROOT_DEFS = [
 
 const CATEGORY_RULES = [
   ['办公数据', /(^|[-_/ ])(docx|pdf|pptx|xlsx|office|spreadsheet|excel|slides?|documents?)([-_/ ]|$)/i],
-  ['视频图像', /(video|comfy|image|img|motion|animation|h3|shot|film|cinema|storyboard|voice|audio|music|whisper|tts|nano[-_ ]?banana|chatcut|blender|render|avatar|visual)/i],
+  ['视频图像', /(video|comfy|image|img|motion|animation|shot|film|cinema|storyboard|voice|audio|music|whisper|tts|nano[-_ ]?banana|chatcut|blender|render|avatar|visual)/i],
   ['内容写作', /(wechat|article|content|prose|write|writer|news|blog|copy|publish|feishu|notion|summar|translat|script|story|editor|human[-_ ]?voice)/i],
   ['自动化系统', /(computer|browser|automation|windows|shell|cli|nas|hermes|openclaw|network|proxy|tunnel|server|monitor|health|system|desktop|install|maintenance)/i],
   ['研究分析', /(research|audit|security|reverse|analysis|analy|diagnos|inspect|oracle|review)/i],
