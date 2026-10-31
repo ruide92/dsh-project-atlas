@@ -776,6 +776,11 @@ function requestGate(req) {
       if (!isLoopbackHostname(originHost) && !EXTRA_ALLOWED_HOSTS.has(originHost)) {
         return { ok: false, error: 'origin is not allowed' }
       }
+      // Loopback alone is not same-origin: another local service on a
+      // different port must not be able to trigger state-changing requests.
+      if (parsed.host.toLowerCase() !== hostHeader.toLowerCase()) {
+        return { ok: false, error: 'origin is not same-origin' }
+      }
     } catch {
       return { ok: false, error: 'invalid origin' }
     }

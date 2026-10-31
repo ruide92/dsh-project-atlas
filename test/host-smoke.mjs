@@ -338,6 +338,10 @@ if (outsideInherit.status !== 403) throw new Error(`inherit cwd guard failed: ${
 
 const crossOrigin = await call('POST', '/dsh-workbench/api/handoffs', { projectId: 'x' }, 'http://evil.example')
 if (crossOrigin.status !== 403) throw new Error('cross-origin handoff POST was not rejected')
+const crossPort = await call('POST', '/dsh-workbench/api/handoffs', { projectId: 'x' }, 'http://127.0.0.1:9999')
+if (crossPort.status !== 403) throw new Error('cross-port handoff POST was not rejected')
+const otherLoopback = await call('POST', '/dsh-workbench/api/handoffs', { projectId: 'x' }, 'http://localhost:64382')
+if (otherLoopback.status !== 403) throw new Error('loopback alias was treated as same-origin')
 
 console.log('host smoke ok', { routes: [...routes.keys()].length, saved: saved.length, pathStatus: status.body })
 await fs.rm(tmp, { recursive: true, force: true })
