@@ -9761,7 +9761,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', { className: 'wb-brand' },
               h('div', { className: 'wb-brand-mark' }, h(WorkbenchGlyph, { size: 21 })),
               h('div', { style: { minWidth: 0 } },
-                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.24.1')),
+                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.0.0')),
                 h('div', { className: 'wb-subtitle' }, tr('subtitle')))),
             h('div', { className: 'wb-header-spacer' }),
             h('div', { className: 'wb-scan-state' },
