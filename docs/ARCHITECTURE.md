@@ -26,7 +26,7 @@ Project Atlas 是一个本地优先的 DSH Web 插件。它由三部分组成：
 ## 请求流程
 
 1. 浏览器请求 `/dsh-workbench/api/state`。
-2. `index.js` 先检查请求来源：只接受 loopback / 显式允许的来源，并校验 `Origin`、`Sec-Fetch-Site` 等信号。
+2. `index.js` 先检查请求来源：只接受 loopback / 显式允许的来源，并校验 `Origin`、`Sec-Fetch-Site` 等信号；有 `Origin` 时还要求 host（含端口）完全一致。
 3. 配置加载器读取 `DSH_WORKBENCH_CONFIG`、插件目录配置或数据目录配置；没有配置时返回空状态。
 4. 扫描器按 `roots` 读取目录元数据，项目模型聚合成项目列表。
 5. 客户端渲染项目卡片、场景和详情；项目内容不会自动发给 Agent。

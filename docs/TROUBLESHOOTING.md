@@ -34,9 +34,13 @@ JSON 无效时不要期待静默回退；状态里会报告配置错误。
 
 检查 `dshHome` / `dshSessionsDir` 是否指向当前 DSH 数据目录。不同 profile 的会话目录可能不同。
 
+## 插件市场暂时搜不到
+
+市场目录需要维护者合并条目并重建索引，通常不是本地安装问题。先在 GitHub Release 页面确认仓库可访问；如果条目仍在审核，使用 README 的手动安装，或等目录刷新后重启桌面端再看。不要为了搜索而重复提交或关闭 PR。
+
 ## 端口或登录问题
 
-DSH Web 默认只监听 loopback，并要求启动时打印的 token URL。不要用 `0.0.0.0` 暴露到局域网；不要绕过来自 `dsh web` 的认证。
+DSH Web 默认只监听 loopback，并要求启动时打印的 token URL。默认不要用 `0.0.0.0` 暴露到局域网；如果确实需要 LAN / 反向代理访问，显式设置 `DSH_WORKBENCH_ALLOWED_HOSTS`（只填主机名），并保留 DSH 自身的认证。不要绕过 `dsh web` 的登录。
 
 ## 侧边栏出现两个工作台
 

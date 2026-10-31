@@ -42,6 +42,8 @@ Project Atlas 的配置是普通 JSON。它只决定“读哪里、怎么读”�
 | `openCodeDb` | `string` | 空 | OpenCode 数据库 |
 | `allowDelete` | `boolean` | `false` | 是否允许删除“已弃用”项目 |
 | `protectedPaths` | `string[]` | `[]` | 额外禁止删除的路径 |
+| `maxFilesPerProject` | `number` | `120000` | 单个项目最多读取的文件数，防止超大目录拖慢扫描 |
+| `maxSizeMsPerProject` | `number` | `4000` | 单个项目的软时间预算（毫秒），超时后保留已收集的部分 |
 
 ## 扫描规则
 
@@ -70,5 +72,7 @@ Project Atlas 的配置是普通 JSON。它只决定“读哪里、怎么读”�
 | `DSH_WORKBENCH_CONFIG` | 显式配置文件路径 |
 | `DSH_WORKBENCH_DATA` | 运行数据目录覆盖（目录缓存、备注、交接记录等） |
 | `DSH_WORKBENCH_CODEX_DB` | Codex 会话数据库覆盖 |
+| `DSH_WORKBENCH_ALLOWED_HOSTS` | 逗号分隔的额外主机名，用于明确允许 LAN / 反向代理访问；只填主机名，不要带端口。默认只允许 loopback |
+| `OPENCODE_DB` | OpenCode 数据库路径；也可在配置文件中使用 `openCodeDb` |
 
 环境变量适合临时验证。长期配置建议放在 `<DSH_HOME>/data/dsh-workbench/config.json`，升级插件不会丢。

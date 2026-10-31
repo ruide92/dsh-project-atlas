@@ -14,6 +14,8 @@ Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目
 
 在 DSH 的插件市场搜索 **Project Atlas** 或 **可视化工作台**，安装后按桌面端提示重启。
 
+> 市场条目需要维护者合并并重建目录；如果暂时搜索不到，请使用下面的手动安装。仓库和 Release 已经可直接下载。
+
 ### 手动安装
 
 ```bash
