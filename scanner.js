@@ -105,6 +105,10 @@ async function safeStat(p) {
 
 async function readText(p, max = 8192) {
   try {
+    // Project metadata is untrusted input. Never follow a symlink out of the
+    // project when reading a README, manifest or Git file.
+    const st = await fs.lstat(p)
+    if (!st.isFile() || st.isSymbolicLink()) return ''
     const fh = await fs.open(p, 'r')
     try {
       const buf = Buffer.alloc(max)
@@ -115,7 +119,11 @@ async function readText(p, max = 8192) {
 }
 
 async function readJson(p) {
-  try { return JSON.parse(await fs.readFile(p, 'utf8')) } catch { return null }
+  try {
+    const st = await fs.lstat(p)
+    if (!st.isFile() || st.isSymbolicLink()) return null
+    return JSON.parse(await fs.readFile(p, 'utf8'))
+  } catch { return null }
 }
 
 function detectMarkers(entries) {
@@ -314,8 +322,11 @@ function parseGitConfig(text) {
 
 async function gitInfo(dir) {
   const dotGit = path.join(dir, '.git')
-  const st = await safeStat(dotGit)
-  if (!st) return null
+  let st
+  try {
+    st = await fs.lstat(dotGit)
+    if (st.isSymbolicLink()) return null
+  } catch { return null }
   let gitDir = dotGit
   if (!st.isDirectory()) {
     const text = await readText(dotGit, 512)

@@ -24,8 +24,8 @@ async function addDocument(file, docs, seen) {
   const key = normalizePath(resolved)
   if (!key || seen.has(key)) return
   try {
-    const stat = await fs.promises.stat(resolved)
-    if (!stat.isFile()) return
+    const stat = await fs.promises.lstat(resolved)
+    if (!stat.isFile() || stat.isSymbolicLink()) return
     seen.add(key)
     docs.push({
       name: path.basename(resolved),
@@ -34,8 +34,8 @@ async function addDocument(file, docs, seen) {
       mtime: stat.mtime.toISOString(),
     })
   } catch {
-    // A file can disappear between readdir and stat; omit it rather than
-    // presenting a stale entry as current truth.
+    // A file can disappear between readdir and lstat; omit it rather than
+    // presenting a stale entry as current truth. Symlinks are not followed.
   }
 }
 
