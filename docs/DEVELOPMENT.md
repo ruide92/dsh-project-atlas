@@ -17,13 +17,13 @@ npm run check
 
 ## 临时安装验证
 
-使用 DSH 内置 pnpm，把公开包安装到一个**独立 profile**，不要直接改正在使用的 profile：
+使用 DSH CLI，把公开包安装到一个**独立 profile**，不要直接改正在使用的 profile：
 
 ```bash
-node <DSH 内置 pnpm 路径> add github:ruide92/dsh-project-atlas
+dsh plugin --profile <临时 profile> add github:ruide92/dsh-project-atlas
 ```
 
-然后在临时 profile 的 `dsh.profile.bundles` 中加入 `dsh-project-atlas`，启动一个不同端口的临时 Host 验证。验证完成后关闭临时进程；不要重启用户正在使用的 DSH 桌面端。
+如果 `dsh` 不在 PATH 中，使用桌面端内置的完整 CLI 路径。然后在临时 profile 的 `dsh.profile.bundles` 中加入 `dsh-project-atlas`，启动一个不同端口的临时 Host 验证。验证完成后关闭临时进程；不要重启用户正在使用的 DSH 桌面端。
 
 如果同时安装旧的 `@local/dsh-workbench` 和新的 `dsh-project-atlas`，两者会争用同一个侧边栏 id 和 `/dsh-workbench/api`，只能启用其中一个。
 

@@ -12,17 +12,17 @@ Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目
 
 ### 从 DSH 插件市场安装
 
-在 DSH 的插件市场搜索 **Project Atlas** 或 **可视化工作台**，安装后按桌面端提示重启。
+在 DSH 的插件市场搜索 **Project Atlas** 或 **项目工作台**，安装后按桌面端提示重启。
 
 > 市场条目需要维护者合并并重建目录；如果暂时搜索不到，请使用下面的手动安装。仓库和 Release 已经可直接下载。
 
 ### 手动安装
 
 ```bash
-node <DSH 内置 pnpm 路径> add github:ruide92/dsh-project-atlas
+dsh plugin --profile <profile> add github:ruide92/dsh-project-atlas
 ```
 
-然后在 `~/.dsh/profiles/<profile>/package.json` 的 `dsh.profile.bundles` 中加入 `dsh-project-atlas`，重启桌面端。具体路径以你的 DSH 安装为准。也可以直接使用 GitHub 仓库的 tarball 地址安装。
+如果 `dsh` 不在 PATH 中，使用桌面端内置的完整 CLI 路径。然后在 `~/.dsh/profiles/<profile>/package.json` 的 `dsh.profile.bundles` 中加入 `dsh-project-atlas`，重启桌面端。具体路径以你的 DSH 安装为准；也可以直接从 GitHub 仓库的 tarball 地址安装。
 
 ## 第一次使用
 
