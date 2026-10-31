@@ -69,6 +69,14 @@ node <DSH 内置 pnpm 路径> add github:ruide92/dsh-project-atlas
 - 删除默认关闭。即使开启，也只允许删除标记为“已弃用”的顶层项目，并且会拒绝符号链接、插件自身和数据目录。
 - 仓库与发布包不包含任何真实项目、用户名、机器路径、会话 ID 或项目截图；内置地球纹理是 NASA 公共领域素材。
 
+## 文档
+
+- [配置参考](docs/CONFIGURATION.md)：完整字段、优先级、扫描与删除边界
+- [架构与数据流](docs/ARCHITECTURE.md)：模块、请求流程、数据目录
+- [隐私与安全](docs/PRIVACY.md)：读取范围、写入范围、公开仓库清洁规则
+- [开发与发布](docs/DEVELOPMENT.md)：本地检查、临时安装、发布流程
+- [故障排查](docs/TROUBLESHOOTING.md)：空状态、配置、会话、端口与双工作台冲突
+
 ## 开发
 
 ```bash

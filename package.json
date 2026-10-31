@@ -39,7 +39,8 @@
     "assets",
     "README.md",
     "LICENSE",
-    "ASSET-LICENSES.md"
+    "ASSET-LICENSES.md",
+    "docs"
   ],
   "dsh": {
     "bundle": {
