@@ -50,6 +50,20 @@ test('classifies artifact kinds by extension', () => {
   assert.equal(guessKind('unknown.bin'), 'file')
 })
 
+test('keeps only safe artifact link schemes', () => {
+  const runtime = normalizeRuntime({
+    artifacts: [
+      { path: 'a.md', url: 'javascript:alert(1)' },
+      { path: 'b.md', url: 'data:text/html,<script>alert(1)</script>' },
+      { path: 'c.md', url: 'https://example.com/artifact.png' },
+      { path: 'd.md', url: '/dsh-workbench/api/artifact?id=x&path=y' },
+    ],
+  })
+  assert.deepEqual(runtime.artifacts.map((artifact) => artifact.url), [
+    '', '', 'https://example.com/artifact.png', '/dsh-workbench/api/artifact?id=x&path=y',
+  ])
+})
+
 test('marks old heartbeats as stale but keeps unknown/ready quiet', () => {
   const old = normalizeRuntime({ state: 'running', heartbeatAt: '2020-01-01T00:00:00Z' })
   assert.equal(runtimeIsStale(old, Date.parse('2026-10-29T00:00:00Z')), true)

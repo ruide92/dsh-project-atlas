@@ -64,6 +64,20 @@ function text(value, max = 500) {
   return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
 }
 
+function safeArtifactUrl(value) {
+  const raw = text(value, 2000)
+  if (!raw) return ''
+  // Runtime manifests are project-authored data. Only allow links that the
+  // workbench can safely open: its own API routes or ordinary HTTP(S).
+  if (raw.startsWith('/dsh-workbench/')) return raw
+  try {
+    const parsed = new URL(raw)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? raw : ''
+  } catch {
+    return ''
+  }
+}
+
 function iso(value) {
   if (!value) return ''
   const parsed = typeof value === 'number' ? value : Date.parse(String(value))
@@ -129,7 +143,7 @@ function normalizeArtifact(value, index = 0) {
     sizeBytes: Math.max(0, Math.round(number(value.sizeBytes ?? value.size, 0))),
     createdAt: iso(value.createdAt || value.mtime || value.updatedAt),
     version: text(value.version, 40),
-    url: text(value.url, 2000),
+    url: safeArtifactUrl(value.url),
     preview: text(value.preview, 2000),
   }
 }
