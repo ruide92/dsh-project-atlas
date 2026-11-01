@@ -122,6 +122,14 @@ function overrideFor(p) {
   return overrides[p.id] || null
 }
 
+function normalizeEarthAnchor(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const { lat, lon } = value
+  if (typeof lat !== 'number' || !Number.isFinite(lat) || lat < -90 || lat > 90) return null
+  if (typeof lon !== 'number' || !Number.isFinite(lon) || lon < -180 || lon > 180) return null
+  return { lat, lon }
+}
+
 function presentProject(p) {
   const c = curationFor(p)
   const o = overrideFor(p)
@@ -197,6 +205,7 @@ function presentProject(p) {
     cleanup,
     sessionPolicy,
     representativeImage,
+    earthAnchor: normalizeEarthAnchor(o?.earthAnchor),
     lineage,
     identity: {
       ...(p.identity || {}),
@@ -2002,7 +2011,7 @@ async function handleOverride(req, res) {
     return
   }
   const patch = body.patch && typeof body.patch === 'object' ? body.patch : {}
-  const allowed = ['name', 'note', 'status', 'tags', 'hidden', 'pinned', 'lifecycle', 'intent', 'sessionPolicy', 'representativeImage']
+  const allowed = ['name', 'note', 'status', 'tags', 'hidden', 'pinned', 'lifecycle', 'intent', 'sessionPolicy', 'representativeImage', 'earthAnchor']
   const next = { ...(overrides[id] || {}) }
   for (const key of allowed) {
     if (!Object.prototype.hasOwnProperty.call(patch, key)) continue
@@ -2018,6 +2027,13 @@ async function handleOverride(req, res) {
     }
     if (key === 'sessionPolicy') {
       next.sessionPolicy = normalizeSessionPolicy(patch.sessionPolicy)
+      continue
+    }
+    if (key === 'earthAnchor') {
+      if (patch.earthAnchor === null) { delete next.earthAnchor; continue }
+      const anchor = normalizeEarthAnchor(patch.earthAnchor)
+      if (!anchor) { sendJson(res, 400, { ok: false, error: 'invalid earth anchor coordinates' }); return }
+      next.earthAnchor = anchor
       continue
     }
     if (key === 'representativeImage') {

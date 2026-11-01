@@ -586,7 +586,7 @@ window.__ModuleLoader__.load({
         earthSubtitle: '本机项目的一张导航图',
         earthOverline: 'EARTH / LOCAL PROJECTS',
         earthHeadline: '把项目放回一颗星球上',
-        earthIntro: '真实卫星影像，按你的设备时间显示昼夜。项目标记的位置只是个人布局示意，不是真实经纬度。',
+        earthIntro: '真实卫星影像，按你的设备时间显示昼夜。项目锚点用于个人布局，不代表项目真实所在地。',
         earthPlayHint: '暂停或继续自动旋转',
         earthIndex: '项目索引',
         earthIndexFullscreen: '全屏索引',
@@ -631,8 +631,8 @@ window.__ModuleLoader__.load({
         earthOpenScene: '进入项目现场',
         earthBackToOrbit: '回到轨道',
         earthCanvasLabel: '可拖动、缩放的真实卫星影像地球',
-        earthLayoutNote: '位置为个人布局示意，不是真实地理坐标。',
-        earthCredit: 'NASA Blue Marble / Black Marble · 全球卫星影像，本地打包；城市级地形未加载 · 位置为个人布局示意',
+        earthLayoutNote: '锚点用于项目布局，不代表项目真实所在地。',
+        earthCredit: 'NASA Blue Marble / Black Marble · 全球卫星影像，本地打包；城市级地形未加载 · 锚点不代表项目真实所在地',
         earthFallbackTitle: '地球视图暂不可用，已切换到项目地形图',
         earthWebglFailed: '这台设备或当前窗口没有可用的 WebGL。项目数据仍然可用，地形图保留全部入口。',
         earthTextureFailed: '本地地球影像未能载入。没有用低清贴图冒充 3D，已切换到项目地形图。',
@@ -661,6 +661,23 @@ window.__ModuleLoader__.load({
         earthAnchorSessions: '会话',
         earthAnchorFolder: '目录',
         earthAnchorKicker: 'PROJECT ANCHOR / 项目锚点',
+        earthAnchorEdit: '设置地图位置',
+        earthAnchorEditTitle: '设置项目位置',
+        earthAnchorEditHint: '拖动或双指缩放地球，点「地图选点」后点击球面；也可以直接填写经纬度。保存前不会更改项目位置。',
+        earthAnchorLatitude: '纬度（-90 到 90）',
+        earthAnchorLongitude: '经度（-180 到 180）',
+        earthAnchorPick: '地图选点',
+        earthAnchorPicking: '请点击地球表面选择位置',
+        earthAnchorPickMiss: '请点击地球表面，空白区域没有坐标。',
+        earthAnchorSave: '保存位置',
+        earthAnchorReset: '恢复自动位置',
+        earthAnchorInvalid: '请输入有效的纬度（-90 到 90）和经度（-180 到 180）。',
+        earthAnchorSaved: '位置已保存',
+        earthAnchorSaveFailed: '位置保存失败',
+        earthAnchorRefreshFailed: '位置已保存，但显示刷新失败。请重试刷新。',
+        earthAnchorRetryRefresh: '重试刷新',
+        earthAnchorCancel: '取消',
+        earthAnchorPreview: '预览位置',
         earthRecentRecord: '最近记录',
         earthNoRecord: '还没有可显示的记录',
         earthRecordHint: '活动时间来自本机扫描，不代表任务成功。',
@@ -1381,7 +1398,7 @@ window.__ModuleLoader__.load({
         earthSubtitle: 'A navigation map for this machine',
         earthOverline: 'EARTH / LOCAL PROJECTS',
         earthHeadline: 'Put your projects back on a planet',
-        earthIntro: 'Real satellite imagery with day and night from this device’s clock. Marker positions are a personal layout cue, not real coordinates.',
+        earthIntro: 'Real satellite imagery with day and night from this device’s clock. Project anchors are for your layout, not the projects’ real-world locations.',
         earthPlayHint: 'Pause or resume rotation',
         earthIndex: 'Project index',
         earthIndexFullscreen: 'Fullscreen index',
@@ -1426,8 +1443,8 @@ window.__ModuleLoader__.load({
         earthOpenScene: 'Enter project scene',
         earthBackToOrbit: 'Back to orbit',
         earthCanvasLabel: 'Interactive satellite Earth, draggable and zoomable',
-        earthLayoutNote: 'Marker positions are a personal layout cue, not real coordinates.',
-        earthCredit: 'NASA Blue Marble / Black Marble · global imagery bundled locally; city-level terrain is not loaded · markers are a personal layout cue',
+        earthLayoutNote: 'Anchors are for project layout and do not represent the projects’ real-world locations.',
+        earthCredit: 'NASA Blue Marble / Black Marble · global imagery bundled locally; city-level terrain is not loaded · anchors do not represent real project locations',
         earthFallbackTitle: 'Earth view is unavailable; switched to the project terrain',
         earthWebglFailed: 'WebGL is unavailable in this device or window. Project data still works and the terrain view keeps every entry point.',
         earthTextureFailed: 'The local Earth imagery could not be loaded. No low-resolution texture was passed off as 3D; the terrain view is shown instead.',
@@ -1456,6 +1473,23 @@ window.__ModuleLoader__.load({
         earthAnchorSessions: 'Sessions',
         earthAnchorFolder: 'Folder',
         earthAnchorKicker: 'PROJECT ANCHOR / PROJECT NOTES',
+        earthAnchorEdit: 'Set map location',
+        earthAnchorEditTitle: 'Set project location',
+        earthAnchorEditHint: 'Drag or pinch the globe, then choose a point on its surface; or enter latitude and longitude. Changes are applied only after saving.',
+        earthAnchorLatitude: 'Latitude (-90 to 90)',
+        earthAnchorLongitude: 'Longitude (-180 to 180)',
+        earthAnchorPick: 'Pick on map',
+        earthAnchorPicking: 'Select a point on the globe',
+        earthAnchorPickMiss: 'Select the globe surface; empty space has no coordinates.',
+        earthAnchorSave: 'Save location',
+        earthAnchorReset: 'Use automatic location',
+        earthAnchorInvalid: 'Enter a latitude from -90 to 90 and longitude from -180 to 180.',
+        earthAnchorSaved: 'Location saved',
+        earthAnchorSaveFailed: 'Could not save location',
+        earthAnchorRefreshFailed: 'Location saved, but the display could not refresh. Please retry.',
+        earthAnchorRetryRefresh: 'Retry refresh',
+        earthAnchorCancel: 'Cancel',
+        earthAnchorPreview: 'Preview location',
         earthRecentRecord: 'Recent record',
         earthNoRecord: 'No record to show yet',
         earthRecordHint: 'Activity time comes from the local scan; it does not mean the task succeeded.',
@@ -2537,6 +2571,17 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-earth-card-close:hover,.wb-earth-card-close:focus-visible{border-color:rgba(243,217,182,.56);color:#f6e4c9;background:rgba(243,217,182,.08);outline:none}
 .wb-earth-card-actions{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:13px 0 3px;padding:12px 0;border-top:1px solid rgba(218,234,240,.12);border-bottom:1px solid rgba(218,234,240,.12)}
 .wb-earth-card-actions .wb-btn{font-size:11px;padding:7px 10px}
+.wb-earth-anchor-editor{position:absolute;z-index:30;box-sizing:border-box;left:18px;top:68px;width:min(310px,calc(100% - 36px));max-height:calc(100% - 86px);overflow:auto;padding:14px;border:1px solid rgba(221,235,240,.3);border-radius:14px;background:rgba(5,16,23,.97);box-shadow:0 18px 48px rgba(0,0,0,.48);color:#edf5f7}
+.wb-earth-anchor-editor h3{margin:0 0 6px;font-size:15px}.wb-earth-anchor-editor p{margin:0 0 10px;color:rgba(225,238,242,.75);font-size:11px;line-height:1.5}
+.wb-earth-anchor-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.wb-earth-anchor-fields label{display:flex;min-width:0;flex-direction:column;gap:4px;color:rgba(225,238,242,.8);font-size:10px}.wb-earth-anchor-fields input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;border:1px solid rgba(220,234,240,.28);border-radius:6px;background:#101e26;color:#fff;padding:8px;font:inherit;font-size:16px}
+.wb-earth-anchor-controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.wb-earth-anchor-controls .wb-btn{min-height:44px}.wb-earth-anchor-editor .is-error{color:#ffb6a8}.wb-earth-anchor-editor .is-status{color:#e9d6ac}
+.wb-earth.is-anchor-picking .wb-earth-canvas{cursor:crosshair}.wb-earth.is-anchor-editing .wb-earth-markers{pointer-events:none}.wb-earth.is-anchor-editing .wb-earth-marker{pointer-events:none!important}
+.wb-earth.is-anchor-editing .wb-earth-inspector{display:none}
+.wb-earth.is-anchor-editing .wb-earth-marker.is-active{visibility:hidden}
+.wb-earth-anchor-preview{position:absolute;z-index:16;left:0;top:0;pointer-events:none;display:flex;align-items:center;gap:5px;color:#fff;font-size:11px;text-shadow:0 1px 5px #000;white-space:nowrap}
+.wb-earth-anchor-preview::before{content:"";box-sizing:content-box;width:12px;height:12px;flex:none;border:2px solid #fff;border-radius:50%;background:#74c2f5;box-shadow:0 0 0 5px rgba(116,194,245,.3),0 0 18px #74c2f5}
+@media(max-width:640px){.wb-earth-anchor-editor{top:auto;bottom:12px;left:10px;width:calc(100% - 20px);max-height:48%;padding:10px}.wb-earth-anchor-editor p{font-size:11px}.wb-earth-anchor-controls{gap:5px;margin-top:7px}}
+@container wb-workbench (max-width:600px){.wb-earth-anchor-editor{top:auto;bottom:12px;left:10px;width:calc(100% - 20px);max-height:48%;padding:10px}}
 .wb-earth-card-hint{flex-basis:100%;font-size:8.5px;line-height:14px;color:rgba(203,221,229,.46);letter-spacing:.02em}
 .wb-earth-card-tail{display:none;position:absolute;z-index:0;top:var(--wb-card-tail,50%);width:13px;height:13px;background:#07151d;border:1px solid rgba(243,217,182,.3);transform:rotate(45deg);pointer-events:none}
 .wb-earth.is-landing .wb-earth-inspector.is-map-card[data-card-side="left"] .wb-earth-card-tail{display:block;right:-7px;border-left:0;border-bottom:0}
@@ -5016,23 +5061,26 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
     const EARTH_NIGHT_URL = '/dsh-workbench/assets/earth-night.jpg'
     const EARTH_RETURN_KEY = 'wb-earth-return'
     const EARTH_RAD = Math.PI / 180
-    const EARTH_GEO = {
-      persistent: [58, 24],
-      incubating: [23, -8],
-      temporary: [-16, -40],
-      unclassified: [-46, -70],
-    }
-
     function earthHash(value) {
       return [...String(value || '')].reduce((sum, char) => ((sum * 31 + char.charCodeAt(0)) >>> 0), 7)
     }
 
-    function earthCoords(project, index) {
-      const range = EARTH_GEO[project.lifecycle] || EARTH_GEO.unclassified
-      const seed = earthHash(`${project.id}:${project.displayName || project.name || ''}`)
-      const lat = range[0] + ((seed >>> 7) % 1000) / 999 * (range[1] - range[0])
-      const lon = (((seed % 3600) / 10) + index * 7.3) % 360 - 180
-      return { lat, lon }
+    function earthCoords(project) {
+      const anchor = project?.earthAnchor
+      if (Number.isFinite(anchor?.lat) && Number.isFinite(anchor?.lon) && Math.abs(anchor.lat) <= 90 && Math.abs(anchor.lon) <= 180) {
+        return { lat: anchor.lat, lon: anchor.lon }
+      }
+      // A stable project ID is the sole input: sorting, renaming or changing
+      // lifecycle must not silently move a project's automatic placeholder.
+      const id = String(project?.id || '')
+      const mix = (value) => {
+        value ^= value >>> 16; value = Math.imul(value, 0x7feb352d)
+        value ^= value >>> 15; value = Math.imul(value, 0x846ca68b)
+        return (value ^ (value >>> 16)) >>> 0
+      }
+      const latSeed = mix(earthHash('lat:' + id)) / 0xffffffff
+      const lonSeed = mix(earthHash('lon:' + id)) / 0xffffffff
+      return { lat: Math.asin(2 * latSeed - 1) / EARTH_RAD, lon: lonSeed * 360 - 180 }
     }
 
     function earthReduced() {
@@ -5148,8 +5196,15 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const z = [eye[0] - center[0], eye[1] - center[1], eye[2] - center[2]]
       const zl = Math.hypot(...z) || 1
       z[0] /= zl; z[1] /= zl; z[2] /= zl
-      const x = [up[1] * z[2] - up[2] * z[1], up[2] * z[0] - up[0] * z[2], up[0] * z[1] - up[1] * z[0]]
-      const xl = Math.hypot(...x) || 1
+      let x = [up[1] * z[2] - up[2] * z[1], up[2] * z[0] - up[0] * z[2], up[0] * z[1] - up[1] * z[0]]
+      let xl = Math.hypot(...x)
+      if (xl < 1e-8) {
+        // At either geographic pole, the default up vector is parallel to
+        // the camera direction. Use a perpendicular axis instead.
+        const alternate = Math.abs(z[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0]
+        x = [alternate[1] * z[2] - alternate[2] * z[1], alternate[2] * z[0] - alternate[0] * z[2], alternate[0] * z[1] - alternate[1] * z[0]]
+        xl = Math.hypot(...x) || 1
+      }
       x[0] /= xl; x[1] /= xl; x[2] /= xl
       const y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]]
       return [
@@ -5173,6 +5228,45 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const ndcY = (projection[5] * y) / w
       if (Math.abs(ndcX) > 1.25 || Math.abs(ndcY) > 1.25) return null
       return { x: (ndcX * 0.5 + 0.5) * width, y: (-ndcY * 0.5 + 0.5) * height }
+    }
+
+    function earthPointVisible(point, eye) {
+      // A unit-sphere surface point is above the horizon iff the camera is
+      // outside its tangent plane. A simple front-hemisphere test is wrong
+      // when the camera is close to the globe.
+      return point[0] * eye[0] + point[1] * eye[1] + point[2] * eye[2] >= 1 - 1e-7
+    }
+
+    function earthMarkerViewport(canvas) {
+      return { width: canvas.clientWidth, height: canvas.clientHeight }
+    }
+
+    // Convert a CSS-pixel pointer position into a ray in the current WebGL
+    // camera and intersect it with the actual unit globe. Return null for
+    // clicks in space, invalid viewports, or a camera without a valid frame.
+    function earthPickCoords(clientX, clientY, rect, camera) {
+      const width = rect?.width, height = rect?.height
+      const view = camera?.view, projection = camera?.projection, eye = camera?.eye
+      if (![clientX, clientY, rect?.left, rect?.top, width, height].every(Number.isFinite) || width <= 0 || height <= 0 ||
+          !Array.isArray(eye) || eye.length !== 3 || !eye.every(Number.isFinite) || !view || !projection ||
+          !Number.isFinite(projection[0]) || !Number.isFinite(projection[5]) || !projection[0] || !projection[5]) return null
+      const nx = 2 * (clientX - rect.left) / width - 1
+      const ny = 1 - 2 * (clientY - rect.top) / height
+      if (Math.abs(nx) > 1 || Math.abs(ny) > 1) return null
+      const x = nx / projection[0], y = ny / projection[5]
+      const direction = [view[0] * x + view[1] * y - view[2], view[4] * x + view[5] * y - view[6], view[8] * x + view[9] * y - view[10]]
+      if (!direction.every(Number.isFinite)) return null
+      const a = direction.reduce((sum, n) => sum + n * n, 0)
+      const b = 2 * direction.reduce((sum, n, i) => sum + n * eye[i], 0)
+      const c = eye.reduce((sum, n) => sum + n * n, 0) - 1
+      const discriminant = b * b - 4 * a * c
+      if (!(a > 0) || discriminant < 0) return null
+      const near = (-b - Math.sqrt(discriminant)) / (2 * a)
+      const far = (-b + Math.sqrt(discriminant)) / (2 * a)
+      const distance = near >= 0 ? near : far >= 0 ? far : -1
+      if (distance < 0) return null
+      const point = eye.map((value, i) => value + direction[i] * distance)
+      return { lat: Math.asin(Math.max(-1, Math.min(1, point[1]))) / EARTH_RAD, lon: Math.atan2(-point[2], point[0]) / EARTH_RAD }
     }
 
     function earthSunVector(date = new Date()) {
@@ -5582,6 +5676,63 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }))
     }
 
+    function parseEarthAnchorDraft(latitude, longitude) {
+      const latText = String(latitude ?? '').trim(), lonText = String(longitude ?? '').trim()
+      if (!latText || !lonText) return null
+      const lat = Number(latText), lon = Number(lonText)
+      return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 ? { lat, lon } : null
+    }
+
+    // The preview dot is 12 CSS pixels plus a 2-pixel border on each side.
+    // The flex row is vertically centered on that dot; center the dot itself
+    // on the projected coordinate, rather than its upper-left corner.
+    function earthAnchorPreviewTransform(screen) {
+      return `translate3d(${screen.x}px, ${screen.y}px, 0) translate(-8px, -50%)`
+    }
+
+    function finishEarthReturn(flight, { onActive, setIndexOpen, setIndexPreviewId }) {
+      if (flight?.preserveSelection) return
+      onActive('')
+      setIndexOpen(true)
+      setIndexPreviewId('')
+    }
+
+    async function submitEarthAnchor(id, anchor, request = fetch) {
+      const response = await request(API + '/override', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id, patch: { earthAnchor: anchor } }) })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || data.ok === false) throw new Error(data.error || ('HTTP ' + response.status))
+      return data
+    }
+
+    async function refreshEarthAnchor(refresh) {
+      if (typeof refresh !== 'function') return false
+      try { return (await refresh()) !== false } catch { return false }
+    }
+
+    async function saveAndRefreshEarthAnchor(id, anchor, refresh, request = fetch) {
+      await submitEarthAnchor(id, anchor, request)
+      return refreshEarthAnchor(refresh)
+    }
+
+    function EarthAnchorEditor({ editor, tr, onChange, onPick, onSave, onReset, onCancel, onRetryRefresh }) {
+      return h('form', { className: 'wb-earth-anchor-editor', 'aria-label': tr('earthAnchorEditTitle'), onSubmit: (event) => { event.preventDefault(); onSave() } },
+        h('h3', null, tr('earthAnchorEditTitle')),
+        h('p', null, editor.projectName),
+        h('p', null, tr('earthAnchorEditHint')),
+        h('div', { className: 'wb-earth-anchor-fields' },
+          h('label', null, tr('earthAnchorLatitude'), h('input', { type: 'number', step: 'any', min: '-90', max: '90', inputMode: 'decimal', value: editor.lat, disabled: editor.busy || editor.refreshFailed, onChange: (event) => onChange('lat', event.target.value) })),
+          h('label', null, tr('earthAnchorLongitude'), h('input', { type: 'number', step: 'any', min: '-180', max: '180', inputMode: 'decimal', value: editor.lon, disabled: editor.busy || editor.refreshFailed, onChange: (event) => onChange('lon', event.target.value) }))),
+        editor.picking ? h('p', { className: 'is-status', role: 'status' }, tr('earthAnchorPicking')) : null,
+        editor.error ? h('p', { className: 'is-error', role: 'alert' }, editor.error) : null,
+        h('div', { className: 'wb-earth-anchor-controls' },
+          h('button', { type: 'button', className: 'wb-btn', disabled: editor.busy || editor.refreshFailed, onClick: onPick, 'aria-pressed': editor.picking }, tr('earthAnchorPick')),
+          h('button', { type: 'submit', className: 'wb-btn primary', disabled: editor.busy || editor.refreshFailed }, tr('earthAnchorSave')),
+          h('button', { type: 'button', className: 'wb-btn', disabled: editor.busy || editor.refreshFailed, onClick: onReset }, tr('earthAnchorReset')),
+          editor.refreshFailed ? h('button', { type: 'button', className: 'wb-btn primary', disabled: editor.busy, onClick: onRetryRefresh }, tr('earthAnchorRetryRefresh')) : null,
+          h('button', { type: 'button', className: 'wb-btn ghost', disabled: editor.busy, onClick: onCancel }, tr('earthAnchorCancel'))))
+    }
+
     function EarthView({ projects, activeId, onActive, onOpen, onOpenPath, onRefresh, onScene, tr }) {
       const canvasRef = useRef(null)
       const stageRef = useRef(null)
@@ -5622,14 +5773,47 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const [clock, setClock] = useState(() => new Date())
       const [mediaPicker, setMediaPicker] = useState(false)
       const [cardAnchor, setCardAnchor] = useState(null)
+      const [anchorEditor, setAnchorEditor] = useState(null)
+      const [anchorMessage, setAnchorMessage] = useState('')
+      const anchorPreviewRef = useRef(null)
       const activeMedia = useProjectMedia(active?.id, active?.representativeImage?.path || '')
       const dragRef = useRef(null)
+      const anchorPointerRef = useRef(null)
       const touchPointsRef = useRef(new Map())
       const pinchRef = useRef(null)
 
       useEffect(() => {
         stateRef.current.playing = playing
       }, [playing])
+
+      useEffect(() => {
+        if (anchorEditor && activeId !== anchorEditor.projectId) setAnchorEditor(null)
+      }, [activeId, anchorEditor?.projectId])
+
+      useEffect(() => {
+        if (!anchorMessage) return undefined
+        const timer = window.setTimeout(() => setAnchorMessage(''), 3000)
+        return () => window.clearTimeout(timer)
+      }, [anchorMessage])
+
+      useEffect(() => {
+        if (!anchorEditor) return undefined
+        const coords = parseEarthAnchorDraft(anchorEditor.lat, anchorEditor.lon)
+        let frame = 0
+        const drawPreview = () => {
+          const node = anchorPreviewRef.current, camera = stateRef.current.camera
+          if (node) {
+            const point = coords && earthProjectPointOnGlobe(coords)
+            const facing = point && camera && earthPointVisible(point, camera.eye)
+            const screen = facing && stageRef.current && earthProjectPoint(point, camera.view, camera.projection, stageRef.current.clientWidth, stageRef.current.clientHeight)
+            node.style.opacity = screen ? '1' : '0'
+            if (screen) node.style.transform = earthAnchorPreviewTransform(screen)
+          }
+          frame = requestAnimationFrame(drawPreview)
+        }
+        frame = requestAnimationFrame(drawPreview)
+        return () => cancelAnimationFrame(frame)
+      }, [anchorEditor?.projectId, anchorEditor?.lat, anchorEditor?.lon])
 
       useEffect(() => {
         const timer = window.setInterval(() => setClock(new Date()), 30000)
@@ -5662,6 +5846,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       useEffect(() => {
         const handleKey = (event) => {
           if (event.key !== 'Escape') return
+          if (anchorEditor) { if (!anchorEditor.busy) { if (anchorEditor.refreshFailed) setAnchorMessage(tr('earthAnchorRefreshFailed')); setAnchorEditor(null) }; return }
           if (panorama) { setPanorama(false); return }
           if (indexVisible) { setIndexOpen(false); return }
           if (flight || landingRef.current) { returnToOrbit(); return }
@@ -5669,7 +5854,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         }
         window.addEventListener('keydown', handleKey)
         return () => window.removeEventListener('keydown', handleKey)
-      }, [panorama, indexVisible, flight, activeId, onActive])
+      }, [panorama, indexVisible, flight, activeId, onActive, anchorEditor, tr])
 
       // The landing detail is a card attached to the selected marker, not a
       // detached sidebar. Measure after the flight settles and keep it clear of
@@ -5850,9 +6035,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                     }
                     s.cameraOverride = null
                     setFlight(null)
-                    onActive('')
-                    setIndexOpen(true)
-                    setIndexPreviewId('')
+                    finishEarthReturn(f, { onActive, setIndexOpen, setIndexPreviewId })
                   }
                 }
               } else if (s.dragging) {
@@ -5888,6 +6071,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               gl.drawElements(gl.TRIANGLES, sphere.indices.length, gl.UNSIGNED_SHORT, 0)
               s.camera = { eye, target: camera.target, view, projection, width, height }
               const markerLayer = markerNodes.current
+              const markerViewport = earthMarkerViewport(canvas)
               const visibleMarkers = []
               for (const model of modelsRef.current) {
                 const node = markerLayer[model.id]
@@ -5897,7 +6081,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 const point = [Math.cos(lat) * Math.cos(lon), Math.sin(lat), -Math.cos(lat) * Math.sin(lon)]
                 const eyeLength = Math.hypot(...eye) || 1
                 const facing = (point[0] * eye[0] + point[1] * eye[1] + point[2] * eye[2]) / eyeLength
-                const screen = facing > 0.02 ? earthProjectPoint(point, view, projection, width, height) : null
+                // WebGL's backing buffer can be 2× the CSS size on phones and
+                // high-DPI displays. Marker transforms use CSS pixels.
+                const screen = earthPointVisible(point, eye)
+                  ? earthProjectPoint(point, view, projection, markerViewport.width, markerViewport.height)
+                  : null
                 if (!screen) {
                   node.style.opacity = '0'
                   node.style.pointerEvents = 'none'
@@ -5905,7 +6093,9 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 }
                 node.style.opacity = String(Math.min(1, 0.36 + facing * 0.9))
                 node.style.pointerEvents = 'auto'
-                node.style.transform = 'translate3d(' + screen.x + 'px, ' + screen.y + 'px, 0)'
+                // Center the painted dot, not the top-left of its padded hit
+                // target, on the projected surface location.
+                node.style.transform = 'translate3d(' + screen.x + 'px, ' + screen.y + 'px, 0) translate(-11px, -50%)'
                 node.style.zIndex = String(2 + Math.round(facing * 20))
                 node.classList.toggle('is-active', model.id === activeIdRef.current)
                 visibleMarkers.push({ model, node, screen })
@@ -6108,7 +6298,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         return onOpen(project, tab)
       }
 
-      const returnToOrbit = () => {
+      const returnToOrbit = (options = {}) => {
         const currentLanding = landingRef.current
         if (!flight && !currentLanding) return
         const s = stateRef.current
@@ -6117,7 +6307,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         s.cameraOverride = null
         s.flightCamera = null
         s.flight = {
-          type: 'out', project, t: 0, duration: earthReduced() ? 0.01 : 1.15,
+          type: 'out', project, t: 0, duration: earthReduced() ? 0.01 : 1.15, preserveSelection: options?.preserveSelection === true,
           fromCamera: {
             eye: s.camera?.eye || earthOrbitEye(s),
             target: s.camera?.target || [0, 0, 0],
@@ -6131,6 +6321,49 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         setFlight({ phase: 'returning', project, returnTo })
       }
       returnToOrbitRef.current = returnToOrbit
+
+      const beginAnchorEdit = () => {
+        if (!activeModel || flight) return
+        if (landingRef.current) returnToOrbit({ preserveSelection: true })
+        setIndexOpen(false)
+        setPlaying(false)
+        stateRef.current.playing = false
+        setAnchorMessage('')
+        setAnchorEditor({ projectId: activeModel.id, projectName: activeModel.project.displayName || activeModel.project.name,
+          lat: String(Number(activeModel.lat.toFixed(5))), lon: String(Number(activeModel.lon.toFixed(5))), picking: false, busy: false, error: '' })
+      }
+
+      const saveEarthAnchor = async (reset = false) => {
+        if (!anchorEditor || anchorEditor.busy || anchorEditor.refreshFailed) return
+        const coords = reset ? null : parseEarthAnchorDraft(anchorEditor.lat, anchorEditor.lon)
+        if (!reset && !coords) { setAnchorEditor((prev) => prev && { ...prev, error: tr('earthAnchorInvalid') }); return }
+        const projectId = anchorEditor.projectId
+        setAnchorEditor((prev) => prev && { ...prev, busy: true, picking: false, error: '' })
+        try {
+          const refreshed = await saveAndRefreshEarthAnchor(projectId, coords, onRefresh)
+          if (!refreshed) {
+            setAnchorEditor((prev) => prev?.projectId === projectId ? { ...prev, busy: false, refreshFailed: true, error: tr('earthAnchorRefreshFailed') } : prev)
+            return
+          }
+          setAnchorEditor((prev) => prev?.projectId === projectId ? null : prev)
+          setAnchorMessage(tr('earthAnchorSaved'))
+        } catch (error) {
+          setAnchorEditor((prev) => prev?.projectId === projectId ? { ...prev, busy: false, error: `${tr('earthAnchorSaveFailed')}: ${error?.message || error}` } : prev)
+        }
+      }
+
+      const retryEarthAnchorRefresh = async () => {
+        if (!anchorEditor?.refreshFailed || anchorEditor.busy) return
+        const projectId = anchorEditor.projectId
+        setAnchorEditor((prev) => prev && { ...prev, busy: true })
+        const refreshed = await refreshEarthAnchor(onRefresh)
+        if (refreshed) {
+          setAnchorEditor((prev) => prev?.projectId === projectId ? null : prev)
+          setAnchorMessage(tr('earthAnchorSaved'))
+        } else {
+          setAnchorEditor((prev) => prev?.projectId === projectId ? { ...prev, busy: false, error: tr('earthAnchorRefreshFailed') } : prev)
+        }
+      }
 
       const zoomBy = (delta) => {
         const s = stateRef.current
@@ -6148,6 +6381,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const togglePanorama = () => {
+        if (anchorEditor) return
         if (panorama) { setPanorama(false); return }
         if (flight) return
         if (landingRef.current) {
@@ -6159,6 +6393,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const handleStageDoubleClick = (event) => {
+        if (anchorEditor) return
         const target = event.target
         if (target instanceof Element && target.closest('button,a,input,textarea,select,.wb-earth-marker,.wb-earth-inspector,.wb-earth-index,.wb-earth-top,.wb-earth-zoombar,.wb-earth-bottom,.wb-earth-restore')) return
         event.preventDefault()
@@ -6166,6 +6401,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const showIndex = () => {
+        if (anchorEditor) return
         if (flight) return
         if (landingRef.current) { setIndexOpen(true); returnToOrbit(); return }
         if (activeId) {
@@ -6177,6 +6413,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const enterFromIndex = (model) => {
+        if (anchorEditor) return
         if (!model?.project) return
         if (flight || landingRef.current) return
         // Index and globe markers both stop at the inspectable project landing.
@@ -6185,6 +6422,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const openMarker = (project) => {
+        if (anchorEditor) return
         startFlight(project)
       }
 
@@ -6192,6 +6430,9 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         if (event.button !== 0 || flight || stateRef.current.cameraOverride) return
         const canvas = canvasRef.current
         canvas?.setPointerCapture?.(event.pointerId)
+        if (anchorEditor?.picking && !anchorEditor.busy) {
+          anchorPointerRef.current = touchPointsRef.current.size ? null : { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false }
+        }
         if (event.pointerType === 'touch') {
           const points = touchPointsRef.current
           if (points.size >= 2) return
@@ -6210,6 +6451,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         setPlaying(false)
       }
       const pointerMove = (event) => {
+        const pick = anchorPointerRef.current
+        if (pick && pick.id === event.pointerId && Math.hypot(event.clientX - pick.x, event.clientY - pick.y) > 8) pick.moved = true
         const points = touchPointsRef.current
         if (event.pointerType === 'touch' && points.has(event.pointerId)) {
           points.set(event.pointerId, { x: event.clientX, y: event.clientY })
@@ -6229,6 +6472,15 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         s.targetPitch = s.pitch
       }
       const pointerUp = (event) => {
+        const pick = anchorPointerRef.current
+        if (pick && pick.id === event.pointerId) {
+          anchorPointerRef.current = null
+          if (anchorEditor?.picking && !pick.moved && event.type !== 'pointercancel') {
+            const coords = earthPickCoords(event.clientX, event.clientY, canvasRef.current?.getBoundingClientRect(), stateRef.current.camera)
+            if (coords) setAnchorEditor((prev) => prev && { ...prev, lat: String(Number(coords.lat.toFixed(5))), lon: String(Number(coords.lon.toFixed(5))), picking: false, error: '' })
+            else setAnchorEditor((prev) => prev && { ...prev, error: tr('earthAnchorPickMiss') })
+          }
+        }
         if (event.pointerType === 'touch' && touchPointsRef.current.has(event.pointerId)) {
           touchPointsRef.current.delete(event.pointerId)
           pinchRef.current = null
@@ -6288,9 +6540,10 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h(ProjectDeck, { items: projects, activeId, onActive, onSelect: onOpen, tr }))
       }
 
-      return h('div', { className: cx('wb-earth', 'wb-scene-enter', panorama && 'is-panorama', indexVisible && !panorama && 'is-index-open', flight && 'is-flight', landing && 'is-landing') },
+      return h('div', { className: cx('wb-earth', 'wb-scene-enter', panorama && 'is-panorama', indexVisible && !panorama && 'is-index-open', flight && 'is-flight', landing && 'is-landing', anchorEditor && 'is-anchor-editing', anchorEditor?.picking && 'is-anchor-picking') },
         h('div', { ref: stageRef, className: cx('wb-earth-stage', panorama && 'is-panorama', active && 'is-active', flight && 'is-flight', landing && 'is-landing'), onDoubleClick: handleStageDoubleClick },
           h('div', { className: 'wb-earth-stars', 'aria-hidden': true }),
+          anchorEditor ? h('div', { ref: anchorPreviewRef, className: 'wb-earth-anchor-preview', style: { opacity: 0 }, 'aria-hidden': true }, tr('earthAnchorPreview')) : null,
           h('canvas', {
             ref: canvasRef, className: 'wb-earth-canvas', role: 'img',
             'aria-label': tr('earthCanvasLabel'),
@@ -6382,6 +6635,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             isLanding ? h('div', { className: 'wb-earth-card-actions' },
               h('button', { type: 'button', className: 'wb-btn primary', onClick: () => enterProjectFromLanding('overview') }, tr('earthLandingEnter'), ' ↗'),
               h('button', { type: 'button', className: 'wb-btn ghost', onClick: returnToOrbit }, tr('earthLandingReturn')),
+              h('button', { type: 'button', className: 'wb-btn', onClick: beginAnchorEdit }, tr('earthAnchorEdit')),
               h('span', { className: 'wb-earth-card-hint' }, tr('earthLandingWheelHint'))) : null,
             h(ProjectMediaAnchor, { project: active, media: activeMedia, tr, onOpen: openFromEarth, onChoose: () => setMediaPicker(true) }),
             h('div', { className: 'wb-anchor-record' },
@@ -6398,13 +6652,22 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             isLanding ? null : h('div', { className: 'wb-earth-actions-row' },
               h(React.Fragment, null,
                 h('button', { type: 'button', className: 'wb-btn primary', onClick: () => startFlight(active) }, tr('earthEnter'), ' ↗'),
-                h('button', { type: 'button', className: 'wb-btn ghost', onClick: () => openFromEarth(active) }, tr('earthOpenRoom')))),
+                h('button', { type: 'button', className: 'wb-btn ghost', onClick: () => openFromEarth(active) }, tr('earthOpenRoom')),
+                h('button', { type: 'button', className: 'wb-btn', onClick: beginAnchorEdit }, tr('earthAnchorEdit')))),
             h('p', { className: 'wb-earth-disclaimer' }, tr('earthLayoutNote'))) : !indexVisible ? h('aside', { className: 'wb-earth-inspector is-empty' },
             h('div', { className: 'wb-earth-overline' }, tr('earthProjectOverline')),
             h('p', { className: 'wb-earth-empty-copy' },
               h('span', { className: 'wb-earth-hint-desktop' }, tr('earthSelectHint')),
               h('span', { className: 'wb-earth-hint-touch' }, tr('earthTouchSelectHint')))) : null,
           mediaPicker && active ? h(ProjectMediaPicker, { project: active, tr, onClose: () => setMediaPicker(false), onApply: chooseRepresentative }) : null,
+          anchorEditor ? h(EarthAnchorEditor, {
+            editor: anchorEditor, tr,
+            onChange: (key, value) => setAnchorEditor((prev) => prev && { ...prev, [key]: value, picking: false, error: '' }),
+            onPick: () => setAnchorEditor((prev) => prev && { ...prev, picking: !prev.picking, error: '' }),
+            onSave: () => saveEarthAnchor(false), onReset: () => saveEarthAnchor(true), onRetryRefresh: retryEarthAnchorRefresh,
+            onCancel: () => { if (anchorEditor.refreshFailed) setAnchorMessage(tr('earthAnchorRefreshFailed')); setAnchorEditor(null) },
+          }) : null,
+          anchorMessage ? h('div', { className: 'wb-earth-landing-note', role: 'status' }, anchorMessage) : null,
           landing ? h('div', { className: 'wb-earth-landing-note', role: 'status' },
             h('span', { className: 'wb-earth-landing-dot' }),
             h('div', null,
@@ -9931,8 +10194,10 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           if (!silent && (j.projects || []).length && j.stats?.sessionCount === 0) {
             setTimeout(() => load(true), 1500)
           }
+          return true
         } catch (e) {
           setError(tr('apiError') + ': ' + e.message)
+          return false
         } finally { if (!silent) setLoading(false) }
       }, [tr])
 
@@ -10653,7 +10918,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', { className: 'wb-brand' },
               h('div', { className: 'wb-brand-mark' }, h(WorkbenchGlyph, { size: 21 })),
               h('div', { style: { minWidth: 0 } },
-                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.1.1')),
+                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.2.0')),
                 h('div', { className: 'wb-subtitle' }, tr('subtitle')))),
             h('div', { className: 'wb-header-spacer' }),
             h('div', { className: 'wb-scan-state' },

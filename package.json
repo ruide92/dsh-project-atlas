@@ -1,13 +1,13 @@
 {
   "name": "dsh-project-atlas",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Project Atlas — 可视化项目工作台：只读索引本地 AI 项目、技能、会话与产出。",
   "type": "module",
   "license": "MIT",
   "private": false,
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/config.test.mjs test/digest.test.mjs test/session-files.test.mjs test/project-model.test.mjs test/followup.test.mjs test/runtime.test.mjs test/project-lifecycle.test.mjs test/skills.test.mjs test/codex-sessions.test.mjs test/earth-flight.test.mjs test/earth-geo.test.mjs test/scene-registry.test.mjs test/studio-rooms.test.mjs test/library-pages.test.mjs test/workspace-origin.test.mjs test/navigation.test.mjs test/handoff-p0.test.mjs test/empty-state.test.mjs test/project-media-cache.test.mjs test/mobile-project-list.test.mjs test/host-smoke.mjs",
+    "test": "node --test test/config.test.mjs test/digest.test.mjs test/session-files.test.mjs test/project-model.test.mjs test/followup.test.mjs test/runtime.test.mjs test/project-lifecycle.test.mjs test/skills.test.mjs test/codex-sessions.test.mjs test/earth-flight.test.mjs test/earth-geo.test.mjs test/earth-anchor-editor.test.mjs test/scene-registry.test.mjs test/studio-rooms.test.mjs test/library-pages.test.mjs test/workspace-origin.test.mjs test/navigation.test.mjs test/handoff-p0.test.mjs test/empty-state.test.mjs test/project-media-cache.test.mjs test/mobile-project-list.test.mjs test/host-smoke.mjs",
     "check": "node --check index.js && node --check client.js && node --check digest.js && node --check scanner.js && node --check project-model.js && node --check followup.js && node --check runtime.js && node --check project-lifecycle.js && node --check skills.js && node --check codex-sessions.js && node --check truth-docs.js"
   },
   "exports": {
@@ -56,8 +56,8 @@
     },
     "install": {
       "preferred": "tarball",
-      "tarball": "https://github.com/ruide92/dsh-project-atlas/releases/download/v1.1.1/dsh-project-atlas-1.1.1.tgz",
-      "zip": "https://github.com/ruide92/dsh-project-atlas/archive/refs/tags/v1.1.1.zip",
+      "tarball": "https://github.com/ruide92/dsh-project-atlas/releases/download/v1.2.0/dsh-project-atlas-1.2.0.tgz",
+      "zip": "https://github.com/ruide92/dsh-project-atlas/archive/refs/tags/v1.2.0.zip",
       "git": "https://github.com/ruide92/dsh-project-atlas.git"
     }
   },

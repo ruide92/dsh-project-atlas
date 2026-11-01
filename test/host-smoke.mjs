@@ -180,6 +180,41 @@ async function readArtifact(route) {
 }
 
 const state = await call('GET', '/dsh-workbench/api/state')
+// Manual globe positions belong only to workbench overrides, not project files.
+const anchored = await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { earthAnchor: { lat: 0, lon: 0 } } })
+if (anchored.status !== 200 || anchored.body.project?.earthAnchor?.lat !== 0 || anchored.body.project?.earthAnchor?.lon !== 0) {
+  throw new Error(`valid zero coordinates rejected: ${JSON.stringify(anchored.body)}`)
+}
+let anchorState = await call('GET', '/dsh-workbench/api/state')
+if (anchorState.body.projects.find((project) => project.id === 'p1')?.earthAnchor?.lon !== 0) throw new Error('saved anchor missing from state')
+let diskOverrides = JSON.parse(await fs.readFile(path.join(tmp, 'overrides.json'), 'utf8'))
+if (diskOverrides.p1?.earthAnchor?.lat !== 0 || diskOverrides.p1?.earthAnchor?.lon !== 0) throw new Error('anchor missing from persisted workbench overrides')
+for (const anchor of [{ lat: 90, lon: 180 }, { lat: -90, lon: -180 }]) {
+  const response = await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { earthAnchor: anchor } })
+  const fromState = (await call('GET', '/dsh-workbench/api/state')).body.projects.find((project) => project.id === 'p1')?.earthAnchor
+  const fromDisk = JSON.parse(await fs.readFile(path.join(tmp, 'overrides.json'), 'utf8')).p1?.earthAnchor
+  for (const value of [response.body.project?.earthAnchor, fromState, fromDisk]) {
+    if (value?.lat !== anchor.lat || value?.lon !== anchor.lon) throw new Error(`boundary anchor changed: ${JSON.stringify({ anchor, value })}`)
+  }
+}
+await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { earthAnchor: { lat: 0, lon: 0 } } })
+const renamed = await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { name: 'Renamed fixture', lifecycle: 'persistent' } })
+if (renamed.body.project?.earthAnchor?.lat !== 0 || renamed.body.project?.earthAnchor?.lon !== 0) throw new Error('other project overrides changed a saved anchor')
+for (const invalid of [{ lat: 91, lon: 0 }, { lat: 0, lon: -181 }, { lat: '0', lon: 0 }, { lat: 0 }, []]) {
+  const response = await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { earthAnchor: invalid, note: 'must not save' } })
+  if (response.status !== 400) throw new Error(`invalid anchor accepted: ${JSON.stringify(invalid)}`)
+}
+const deniedAnchor = await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { earthAnchor: { lat: 1, lon: 1 } } }, 'http://evil.invalid')
+if (deniedAnchor.status !== 403) throw new Error('cross-origin anchor update was accepted')
+const unknownAnchor = await call('POST', '/dsh-workbench/api/override', { id: 'missing', patch: { earthAnchor: { lat: 1, lon: 1 } } })
+if (unknownAnchor.status !== 404) throw new Error('unknown project anchor update was accepted')
+diskOverrides = JSON.parse(await fs.readFile(path.join(tmp, 'overrides.json'), 'utf8'))
+if (diskOverrides.p1?.earthAnchor?.lat !== 0 || diskOverrides.p1?.note === 'must not save') throw new Error('invalid anchor request partially persisted')
+const cleared = await call('POST', '/dsh-workbench/api/override', { id: 'p1', patch: { earthAnchor: null } })
+anchorState = await call('GET', '/dsh-workbench/api/state')
+if (cleared.status !== 200 || anchorState.body.projects.find((project) => project.id === 'p1')?.earthAnchor !== null) throw new Error('anchor clear failed')
+diskOverrides = JSON.parse(await fs.readFile(path.join(tmp, 'overrides.json'), 'utf8'))
+if (Object.hasOwn(diskOverrides.p1, 'earthAnchor')) throw new Error('anchor was not removed from persisted overrides')
 const originalProject = state.body.projects.find((project) => project.id === 'p1')
 if (state.status !== 200 || originalProject?.sessionCount !== 1) {
   throw new Error(`state session mapping failed: ${JSON.stringify(state.body)}`)
@@ -249,6 +284,7 @@ if (!missingPinned.body.pinnedMissing || missingPinned.body.representative !== n
   throw new Error(`missing pinned image silently switched roots: ${JSON.stringify(missingPinned.body)}`)
 }
 await call('POST', '/dsh-workbench/api/override', { id: 'p2', patch: { representativeImage: { path: 'output/result.png', folder: 2, title: '第二关联图片' } } })
+await call('POST', '/dsh-workbench/api/override', { id: 'p2', patch: { earthAnchor: { lat: 35.2, lon: -180 } } })
 const detachFirst = await call('DELETE', '/dsh-workbench/api/project-folders', { id: 'p2', path: linkedRoot })
 if (detachFirst.status !== 200) throw new Error(`could not detach first linked root: ${JSON.stringify(detachFirst.body)}`)
 const movedPinned = await call('GET', '/dsh-workbench/api/project-media?id=p2')
@@ -258,6 +294,7 @@ if (!movedImage.body.equals(Buffer.from('second linked image'))) throw new Error
 const changedState = await call('GET', '/dsh-workbench/api/state')
 const changedProject = changedState.body.projects.find((project) => project.id === 'p2')
 if (changedProject?.representativeImage?.folder !== 1) throw new Error('project metadata retained obsolete pinned folder index')
+if (changedProject?.earthAnchor?.lat !== 35.2 || changedProject?.earthAnchor?.lon !== -180) throw new Error('linked-folder change lost owner anchor')
 const changedArtifacts = changedProject?.runtime?.artifacts || []
 const secondAfterDetach = changedArtifacts.find((item) => item.title === '第二关联目录结果帧')
 if (secondAfterDetach?.folder !== 1) throw new Error(`runtime cache ignored folder change: ${JSON.stringify(changedArtifacts)}`)

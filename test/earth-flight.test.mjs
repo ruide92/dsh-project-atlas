@@ -65,6 +65,7 @@ test('touch drag rotates and two-finger pinch zooms within safe camera limits', 
     const stateRef = { current: { yaw: 0, pitch: 0, distance: 4, targetDistance: 4, dragging: false } }
     const canvasRef = { current: { setPointerCapture() {} } }
     const dragRef = { current: null }, pinchRef = { current: null }, touchPointsRef = { current: new Map() }
+    const anchorEditor = null, anchorPointerRef = { current: null }
     const flight = null; const setPlaying = () => {}
     ${source.slice(gestureStart, gestureEnd)}
     return { stateRef, pointerDown, pointerMove, pointerUp }`)

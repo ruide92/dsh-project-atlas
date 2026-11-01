@@ -49,6 +49,17 @@ test('opt-in memory saves touch synthetic projects only and reset on restart', {
     assert.equal(state.projects[0].note, 'temporary')
     assert.equal(state.projects[0].identity.intent, 'synthetic intent')
     assert.equal(state.projects[0].lifecycle, 'incubating')
+    assert.equal((await post({ id: 'example-1', patch: { earthAnchor: { lat: 0, lon: 0 } } })).status, 200)
+    assert.deepEqual((await (await instance.request('/dsh-workbench/api/state')).json()).projects[0].earthAnchor, { lat: 0, lon: 0 })
+    for (const anchor of [{ lat: 90, lon: 180 }, { lat: -90, lon: -180 }]) {
+      const response = await post({ id: 'example-1', patch: { earthAnchor: anchor } })
+      assert.equal(response.status, 200)
+      assert.deepEqual((await response.json()).project.earthAnchor, anchor)
+      assert.deepEqual((await (await instance.request('/dsh-workbench/api/state')).json()).projects[0].earthAnchor, anchor)
+    }
+    assert.equal((await post({ id: 'example-1', patch: { earthAnchor: { lat: 91, lon: 0 } } })).status, 400)
+    assert.equal((await post({ id: 'example-1', patch: { earthAnchor: null } })).status, 200)
+    assert.equal((await (await instance.request('/dsh-workbench/api/state')).json()).projects[0].earthAnchor, null)
     instance.child.kill()
     instance = await start()
     const reset = await (await instance.request('/dsh-workbench/api/state')).json()

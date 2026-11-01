@@ -67,11 +67,15 @@ async function readJson(req) {
 }
 function syntheticPatch(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-  const allowed = new Set(['note', 'tags', 'status', 'pinned', 'hidden', 'lifecycle', 'intent'])
+  const allowed = new Set(['note', 'tags', 'status', 'pinned', 'hidden', 'lifecycle', 'intent', 'earthAnchor'])
   if (Object.keys(value).some((key) => !allowed.has(key))) return null
   const patch = {}
   for (const [key, val] of Object.entries(value)) {
-    if (['note', 'status', 'lifecycle', 'intent'].includes(key) && typeof val === 'string' && val.length <= 16000) patch[key] = val
+    if (key === 'earthAnchor' && val === null) patch[key] = null
+    else if (key === 'earthAnchor' && val && typeof val === 'object' && !Array.isArray(val)
+      && typeof val.lat === 'number' && Number.isFinite(val.lat) && val.lat >= -90 && val.lat <= 90
+      && typeof val.lon === 'number' && Number.isFinite(val.lon) && val.lon >= -180 && val.lon <= 180) patch[key] = { lat: val.lat, lon: val.lon }
+    else if (['note', 'status', 'lifecycle', 'intent'].includes(key) && typeof val === 'string' && val.length <= 16000) patch[key] = val
     else if (['pinned', 'hidden'].includes(key) && typeof val === 'boolean') patch[key] = val
     else if (key === 'tags' && Array.isArray(val) && val.length <= 100 && val.every((tag) => typeof tag === 'string' && tag.length <= 200)) patch[key] = val
     else return null
