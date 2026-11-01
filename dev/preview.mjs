@@ -14,6 +14,11 @@ const clientPath = selectedClient ? path.resolve(selectedClient) : path.join(roo
 const assetRoot = selectedClient ? path.join(path.dirname(clientPath), 'assets') : path.join(root, 'assets')
 const saveMode = process.env.ATLAS_PREVIEW_SAVE_MODE || 'readonly'
 if (!['readonly', 'memory', 'failure'].includes(saveMode)) throw new Error('ATLAS_PREVIEW_SAVE_MODE must be readonly, memory or failure')
+const panelWidthInput = process.env.ATLAS_PREVIEW_PANEL_WIDTH || ''
+if (panelWidthInput && (!/^\d+$/.test(panelWidthInput) || Number(panelWidthInput) < 240 || Number(panelWidthInput) > 2000)) {
+  throw new Error('ATLAS_PREVIEW_PANEL_WIDTH must be an integer between 240 and 2000')
+}
+const panelStyle = panelWidthInput ? `#root{width:${Number(panelWidthInput)}px;max-width:100%;}` : ''
 const delayInput = process.env.ATLAS_PREVIEW_SAVE_DELAY_MS || '0'
 const saveDelayMs = Number(delayInput)
 if (!/^\d+$/.test(delayInput) || !Number.isSafeInteger(saveDelayMs) || saveDelayMs > 5000) throw new Error('ATLAS_PREVIEW_SAVE_DELAY_MS must be an integer between 0 and 5000')
@@ -49,7 +54,7 @@ const bundle = ['window.__previewModules = {};', ...await Promise.all(Object.ent
   return `{const module={exports:{}};const exports=module.exports;const require=id=>window.__previewModules[id];\n${source}\nwindow.__previewModules[${JSON.stringify(id)}]=module.exports;}`
 }))].join('\n')
 const saveLabel = saveMode === 'memory' ? '模拟保存：仅内存，停止即清空' : saveMode === 'failure' ? '模拟保存失败' : '只读'
-const previewHtml = html.replace('开发预览 · 合成数据 · 场景设置保存在浏览器', `开发预览 · ${sourceLabel} · 合成数据 · ${saveLabel} · 场景设置保存在浏览器`)
+const previewHtml = html.replace('开发预览 · 合成数据 · 场景设置保存在浏览器', `开发预览 · ${sourceLabel} · 合成数据 · ${saveLabel} · 场景设置保存在浏览器`).replace('</style>', `${panelStyle}</style>`)
 async function readJson(req) {
   let size = 0
   const chunks = []

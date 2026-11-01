@@ -612,6 +612,9 @@ window.__ModuleLoader__.load({
         earthLandingEnter: '进入项目现场',
         earthLandingReturn: '回到轨道',
         earthSelectHint: '点一个球面标记，或用顶部「项目索引」打开项目列表。单击标记先降落看详情；双击空白进入全屏。',
+        earthTouchSelectHint: '点球面标记或顶部「项目索引」查看项目；点「全屏」放大画面。',
+        earthTouchHint: '单指旋转 · 双指缩放',
+        earthTouchExitPanorama: '退出全屏',
         earthZoomIn: '拉近',
         earthZoomOut: '拉远',
         earthDayNight: '昼夜来自设备时间',
@@ -688,6 +691,8 @@ window.__ModuleLoader__.load({
         sceneStudioEvidence: '状态只来自项目状态文件、运行时清单与本机扫描；没有证据就显示未知。',
         sceneStudioUnknown: '未知',
         sceneStudioDeskCount: '工位',
+        sceneStudioMobileRooms: '选择房间查看工位',
+        sceneStudioMobilePan: '左右滑动查看房间与工位',
         sceneStudioRoomsCount: '房间',
         sceneStudioPersistent: '长期项目 · 独立间',
         sceneStudioIncubating: '孵化项目 · 工位区',
@@ -1402,6 +1407,9 @@ window.__ModuleLoader__.load({
         earthLandingEnter: 'Enter project scene',
         earthLandingReturn: 'Back to orbit',
         earthSelectHint: 'Click a marker, or use the Project index button above to open the list. A marker click lands for details first; double-click empty space for fullscreen.',
+        earthTouchSelectHint: 'Tap a marker or the project index to view a project; tap Fullscreen to expand the view.',
+        earthTouchHint: 'Drag to rotate · pinch to zoom',
+        earthTouchExitPanorama: 'Exit fullscreen',
         earthZoomIn: 'Zoom in',
         earthZoomOut: 'Zoom out',
         earthDayNight: 'Day and night follow device time',
@@ -1478,6 +1486,8 @@ window.__ModuleLoader__.load({
         sceneStudioEvidence: 'Status comes only from state files, runtime manifests, and the local scan. Without evidence it stays unknown.',
         sceneStudioUnknown: 'Unknown',
         sceneStudioDeskCount: 'desks',
+        sceneStudioMobileRooms: 'Choose a room to view its desks',
+        sceneStudioMobilePan: 'Swipe left or right to explore the room and desks',
         sceneStudioRoomsCount: 'rooms',
         sceneStudioPersistent: 'Long-term · private rooms',
         sceneStudioIncubating: 'Incubating · work areas',
@@ -3757,6 +3767,74 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 @media (max-width:760px){.wb-sk-head{align-items:flex-start;flex-direction:column;gap:8px}.wb-sk-head-actions{justify-content:flex-start}.wb-sk-title{font-size:32px}.wb-sk-scanned{margin-left:0;width:100%}.wb-sk-matrix{padding-left:8px;padding-right:8px}.wb-sk-list-hint{display:none}.wb-sk-row{padding:9px 10px}.wb-sk-detail{padding:12px}.wb-sk-tools .wb-select{max-width:none;flex:1}}
 @media (prefers-reduced-motion:reduce){.wb-sk,.wb-sk-pill,.wb-sk-cell,.wb-sk-row{transition:none;animation:none}}
 @media (max-width:760px){.wb-header-inner{padding:12px 14px}.wb-subtitle{display:none}.wb-scan-state{display:none}.wb-shell{padding:14px 14px 40px}.wb-meta-grid{grid-template-columns:1fr}.wb-modebar-inner{padding:6px 10px;gap:6px}.wb-modebar-kicker,.wb-modebar-note{display:none}.wb-scene-switch.is-dock{width:100%;justify-content:space-between}.wb-scene-switch.is-dock .wb-scene-button{flex:1 1 0;justify-content:center;padding:7px 4px;font-size:10px;gap:4px}.wb-root.is-scene-mode .wb-shell{padding:8px 10px 12px}}
+/* Touch-sized navigation and readable project rows on narrow screens. */
+.wb-root{container:wb-workbench / inline-size;inline-size:100%;min-inline-size:0}
+@media (max-width:600px){
+  .wb-root,.wb-main,.wb-shell,.wb-project-page{min-width:0}
+  .wb-header-inner{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:8px 10px}
+  .wb-header-spacer{display:none}
+  .wb-brand{gap:7px;min-width:0}.wb-brand-mark{width:30px;height:30px;flex:none;border-radius:9px}
+  .wb-title{font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wb-version{font-size:8px;margin-left:4px;padding:0 3px}
+  .wb-header-inner>.wb-btn{min-height:40px;padding:6px 8px;font-size:12px;gap:4px}
+  .wb-modebar-inner{flex-wrap:nowrap;gap:7px;min-width:0;padding:5px 10px}
+  .wb-modebar-inner .wb-scene-switch.is-dock{flex:1 1 0;width:0;min-width:0;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .wb-scene-switch.is-dock .wb-scene-button{flex:0 0 auto;min-width:64px;min-height:42px;padding:6px 8px;font-size:12px}
+  .wb-scene-settings{flex:none;margin:0}.wb-scene-settings summary{min-height:42px;display:flex;align-items:center;padding:7px;font-size:12px}
+  .wb-scene-settings-panel{max-height:min(65vh,520px);max-height:min(65dvh,520px)}
+  .wb-scene-settings-panel select,.wb-scene-settings-row button{min-height:42px}.wb-scene-settings-row button{min-width:42px}
+  .wb-tabs{gap:4px;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .wb-tabs .wb-tab,.wb-root.is-scene-mode .wb-tabs .wb-tab{min-height:44px;flex:none;padding:10px 12px;font-size:13px}
+  .wb-shell{padding:12px 10px 36px}.wb-root.is-scene-mode .wb-shell{padding:6px 8px 10px}
+  .wb-root .wb-input,.wb-root .wb-select,.wb-scene-settings-panel select{font-size:16px}
+  .wb-tools{gap:8px}.wb-tools>.wb-search{flex:1 1 100%;min-width:0;max-width:none}.wb-search .wb-input{width:100%}
+  .wb-tools>.wb-select{flex:1 1 calc(50% - 8px);min-width:0;max-width:100%;min-height:44px}
+  .wb-tools>.wb-seg{display:flex;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.wb-seg button{min-height:44px;flex:none}
+  .wb-tools.sub .wb-panel-sub{flex-basis:100%;margin:0;text-align:left}.wb-check-group{gap:6px 14px}.wb-check{min-height:40px}
+  .wb-grid,.wb-sw-grid{grid-template-columns:minmax(0,1fr)}
+  .wb-table-wrap{min-width:0;max-width:100%}.wb-table,.wb-table tbody{display:block;width:100%}
+  .wb-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .wb-table tbody tr{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;padding:14px;border-bottom:1px solid var(--dsw-alias-border-l1)}
+  .wb-table tbody tr:last-child{border-bottom:0}.wb-table td{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding:0;border:0;text-align:left}
+  .wb-table td[data-label]::before{content:attr(data-label);color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
+  .wb-table td.name{grid-column:1/-1;max-width:none;padding-right:32px;white-space:normal;overflow-wrap:anywhere;font-size:15px;line-height:21px}
+  .wb-table td.sel{position:absolute;right:14px;top:15px;width:auto;padding:0}.wb-table td.sel .wb-select-check{width:20px;height:20px}
+  .wb-table td.path{grid-column:1/-1;display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wb-table td.path::before{display:block}
+}
+/* The workbench can also occupy a narrow panel within a wide browser window.
+   These rules use the panel's actual width instead of the browser viewport. */
+@container wb-workbench (max-width:600px){
+  .wb-main,.wb-shell,.wb-project-page{min-width:0}
+  .wb-header-inner{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:8px 10px}
+  .wb-header-spacer,.wb-subtitle,.wb-scan-state,.wb-modebar-kicker,.wb-modebar-note{display:none}
+  .wb-brand{gap:7px;min-width:0}.wb-brand-mark{width:30px;height:30px;flex:none;border-radius:9px}
+  .wb-title{font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wb-version{font-size:8px;margin-left:4px;padding:0 3px}
+  .wb-header-inner>.wb-btn{min-height:40px;padding:6px 8px;font-size:12px;gap:4px}
+  .wb-modebar-inner{flex-wrap:nowrap;gap:7px;min-width:0;padding:5px 10px}
+  .wb-modebar-inner .wb-scene-switch.is-dock{flex:1 1 0;width:0;min-width:0;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .wb-scene-switch.is-dock .wb-scene-button{flex:0 0 auto;min-width:64px;min-height:42px;padding:6px 8px;font-size:12px}
+  .wb-scene-settings{flex:none;margin:0}.wb-scene-settings summary{min-height:42px;display:flex;align-items:center;padding:7px;font-size:12px}
+  .wb-scene-settings-panel{width:min(330px,calc(100cqw - 20px));max-height:min(65vh,520px);max-height:min(65dvh,520px)}
+  .wb-scene-settings-panel select,.wb-scene-settings-row button{min-height:42px}.wb-scene-settings-row button{min-width:42px}
+  .wb-tabs{gap:4px;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .wb-tabs .wb-tab,.wb-root.is-scene-mode .wb-tabs .wb-tab{min-height:44px;flex:none;padding:10px 12px;font-size:13px}
+  .wb-shell{padding:12px 10px 36px}.wb-root.is-scene-mode .wb-shell{padding:6px 8px 10px}.wb-meta-grid{grid-template-columns:1fr}
+  .wb-root .wb-input,.wb-root .wb-select,.wb-scene-settings-panel select{font-size:16px}
+  .wb-tools{gap:8px}.wb-tools>.wb-search{flex:1 1 100%;min-width:0;max-width:none}.wb-search .wb-input{width:100%}
+  .wb-tools>.wb-select{flex:1 1 calc(50% - 8px);min-width:0;max-width:100%;min-height:44px}
+  .wb-tools>.wb-seg{display:flex;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.wb-seg button{min-height:44px;flex:none}
+  .wb-tools.sub .wb-panel-sub{flex-basis:100%;margin:0;text-align:left}.wb-check-group{gap:6px 14px}.wb-check{min-height:40px}
+  .wb-grid,.wb-sw-grid{grid-template-columns:minmax(0,1fr)}
+  .wb-table-wrap{min-width:0;max-width:100%}.wb-table,.wb-table tbody{display:block;width:100%}
+  .wb-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .wb-table tbody tr{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;padding:14px;border-bottom:1px solid var(--dsw-alias-border-l1)}
+  .wb-table tbody tr:last-child{border-bottom:0}.wb-table td{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding:0;border:0;text-align:left}
+  .wb-table td[data-label]::before{content:attr(data-label);color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}
+  .wb-table td.name{grid-column:1/-1;max-width:none;padding-right:32px;white-space:normal;overflow-wrap:anywhere;font-size:15px;line-height:21px}
+  .wb-table td.sel{position:absolute;right:14px;top:15px;width:auto;padding:0}.wb-table td.sel .wb-select-check{width:20px;height:20px}
+  .wb-table td.path{grid-column:1/-1;display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wb-table td.path::before{display:block}
+}
 .wb-main::-webkit-scrollbar{width:10px;height:10px}
 .wb-main::-webkit-scrollbar-button{display:none;width:0;height:0}
 .wb-main::-webkit-scrollbar-thumb{background:var(--dsw-alias-border-l3);border-radius:8px;border:3px solid transparent;background-clip:content-box}
@@ -4604,6 +4682,150 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 @keyframes wbOriginArrive{from{opacity:0;transform:scale(1.08)}to{transform:scale(1)}}
 @media(max-width:760px){.wb-room.wb-field .wb-field-origin{width:130px;right:3%;top:5%;opacity:.3}}
 @media(prefers-reduced-motion:reduce){.wb-room.wb-field .wb-field-origin{animation:none!important}}
+/* Project workspace on touch screens: keep content in the viewport and inputs legible. */
+@media (max-width:680px){
+  .wb-room.wb-field{min-width:0}
+  .wb-room.wb-field .wb-room-top{position:sticky;top:0;padding:8px 12px;gap:6px}
+  .wb-room.wb-field .wb-room-back,.wb-room.wb-field .wb-room-top-actions .wb-btn{min-height:44px;font-size:12px}
+  .wb-room.wb-field .wb-room-top-actions .wb-room-open{min-width:44px}
+  .wb-room.wb-field .wb-field-hero{min-height:0}
+  .wb-room.wb-field .wb-field-copy{min-height:210px;padding:26px 16px 20px}
+  .wb-room.wb-field .wb-room-title{overflow-wrap:anywhere;word-break:break-word}
+  .wb-room.wb-field .wb-room-path{display:-webkit-box;max-width:100%;overflow:hidden;white-space:normal;overflow-wrap:anywhere;font-size:11px;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .wb-room.wb-field .wb-room-chips .wb-chip{font-size:11px;padding:3px 7px}
+  .wb-room.wb-field .wb-field-meta{position:relative;left:auto;right:auto;bottom:auto;margin:0 16px}
+  .wb-room.wb-field .wb-field-meta div{min-width:0}
+  .wb-room.wb-field .wb-field-meta span{font-size:10px;letter-spacing:.05em}
+  .wb-room.wb-field .wb-field-meta b{font-size:12px}
+  .wb-room.wb-field .wb-room-chapters{top:61px;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .wb-room.wb-field .wb-room-chapter{flex:0 0 auto;min-height:44px;padding:11px 14px 10px 0;margin-right:10px;font-size:13px}
+  .wb-room.wb-field .wb-ws-body{min-width:0;padding-left:16px;padding-right:16px}
+  .wb-room.wb-field .wb-ws-pane,.wb-room.wb-field .wb-ws-settings,.wb-room.wb-field .wb-ws-settings-card{min-width:0}
+  .wb-room.wb-field .wb-ws-pane-head{align-items:flex-start;flex-wrap:wrap}
+  .wb-room.wb-field .wb-room-task-copy p{font-size:12px}
+  .wb-room.wb-field .wb-field-aside .wb-ws-facts span{font-size:11px}
+  .wb-room.wb-field .wb-field-aside .wb-ws-facts b{font-size:12px}
+  .wb-room.wb-field .wb-ws-session{flex-wrap:wrap}
+  .wb-room.wb-field .wb-ws-session-main{flex-basis:calc(100% - 24px)}
+  .wb-room.wb-field .wb-ws-session-actions{max-width:100%;margin-left:15px;flex-wrap:wrap}
+  .wb-room.wb-field .wb-ws-body input,.wb-room.wb-field .wb-ws-body textarea,.wb-room.wb-field .wb-ws-body select{max-width:100%;font-size:16px}
+  .wb-room.wb-field .wb-ws-body .wb-btn,.wb-room.wb-field .wb-life-choice,.wb-room.wb-field .wb-status-btn{min-height:44px}
+  .wb-room.wb-field .wb-ws-footer-info span,.wb-room.wb-field .wb-life-settings-foot code{white-space:normal;overflow-wrap:anywhere}
+}
+@media (max-width:900px) and (max-height:520px) and (orientation:landscape){
+  .wb-room.wb-field .wb-field-hero{min-height:0}
+  .wb-room.wb-field .wb-field-copy{min-height:150px;padding:20px 20px 12px}
+  .wb-room.wb-field .wb-field-meta{position:relative;left:auto;right:auto;bottom:auto;margin:0 20px;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .wb-room.wb-field .wb-field-meta div:nth-child(3){border-left:1px solid rgba(235,243,245,.1);padding-left:10px}
+  .wb-room.wb-field .wb-ws-body input,.wb-room.wb-field .wb-ws-body textarea,.wb-room.wb-field .wb-ws-body select{font-size:16px}
+}
+/* A desktop host can also embed the workspace in a phone-width panel. */
+@container wb-workbench (max-width:600px){
+  .wb-room.wb-field{min-width:0}
+  .wb-room.wb-field .wb-room-top{position:sticky;top:0;flex-wrap:nowrap;padding:8px 12px;gap:6px}
+  .wb-room.wb-field .wb-room-crumb,.wb-room.wb-field .wb-room-wheel-hint{display:none}
+  .wb-room.wb-field .wb-room-back,.wb-room.wb-field .wb-room-top-actions .wb-btn{min-height:44px;font-size:12px}
+  .wb-room.wb-field .wb-room-top-actions{width:auto;margin-left:auto;flex:0 0 auto;gap:5px}
+  .wb-room.wb-field .wb-room-top-actions .wb-room-open{min-width:44px;padding:0 8px}
+  .wb-room.wb-field .wb-room-open span{display:none}
+  .wb-room.wb-field .wb-field-hero{min-height:0}
+  .wb-room.wb-field .wb-field-media,.wb-room.wb-field .wb-field-media.is-empty{width:100%;opacity:.46;border-left:0}
+  .wb-room.wb-field .wb-field-copy{max-width:100%;min-height:210px;padding:26px 16px 20px}
+  .wb-room.wb-field .wb-room-title{font-size:clamp(30px,9cqw,44px);overflow-wrap:anywhere;word-break:break-word}
+  .wb-room.wb-field .wb-room-path{display:-webkit-box;max-width:100%;overflow:hidden;white-space:normal;overflow-wrap:anywhere;font-size:11px;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .wb-room.wb-field .wb-room-chips{gap:4px;margin-top:13px}.wb-room.wb-field .wb-room-chips .wb-chip{font-size:11px;padding:3px 7px}
+  .wb-room.wb-field .wb-field-meta{position:relative;left:auto;right:auto;bottom:auto;margin:0 16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wb-room.wb-field .wb-field-meta div{min-width:0;padding:8px 10px 9px}.wb-room.wb-field .wb-field-meta div:nth-child(odd){border-left:0;padding-left:0}
+  .wb-room.wb-field .wb-field-meta span{font-size:10px;letter-spacing:.05em}.wb-room.wb-field .wb-field-meta b{font-size:12px}
+  .wb-room.wb-field .wb-room-chapters{top:61px;max-width:100%;padding:0 18px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .wb-room.wb-field .wb-room-chapter{flex:0 0 auto;min-height:44px;padding:11px 14px 10px 0;margin-right:10px;font-size:13px}
+  .wb-room.wb-field .wb-ws-body{min-width:0;padding:0 16px 48px}
+  .wb-room.wb-field .wb-ws-pane,.wb-room.wb-field .wb-ws-settings,.wb-room.wb-field .wb-ws-settings-card{min-width:0}
+  .wb-room.wb-field .wb-ws-pane.is-overview .wb-ws-overview-grid,.wb-room.wb-field .wb-ws-settings{grid-template-columns:minmax(0,1fr)}
+  .wb-room.wb-field .wb-field-main{padding:24px 0 38px}.wb-room.wb-field .wb-field-aside{display:flex;padding:22px 0 48px;border-left:0;border-top:1px solid var(--wb-field-line)}
+  .wb-room.wb-field .wb-room-task{align-items:flex-start;flex-direction:column;gap:14px}.wb-room.wb-field .wb-room-task-actions{width:100%}
+  .wb-room.wb-field .wb-room-task-actions .wb-btn{flex:1}.wb-room.wb-field .wb-room-task-copy p{font-size:12px}
+  .wb-room.wb-field .wb-room-command-row{flex-direction:column;align-items:stretch}
+  .wb-room.wb-field .wb-ws-pane-head{align-items:flex-start;flex-wrap:wrap}.wb-room.wb-field .wb-ws-session{flex-wrap:wrap}
+  .wb-room.wb-field .wb-ws-session-main{flex-basis:calc(100% - 24px)}.wb-room.wb-field .wb-ws-session-actions{max-width:100%;margin-left:15px;flex-wrap:wrap}
+  .wb-room.wb-field .wb-ws-body input,.wb-room.wb-field .wb-ws-body textarea,.wb-room.wb-field .wb-ws-body select{max-width:100%;font-size:16px}
+  .wb-room.wb-field .wb-ws-body .wb-btn,.wb-room.wb-field .wb-life-choice,.wb-room.wb-field .wb-status-btn{min-height:44px}
+  .wb-room.wb-field .wb-field-aside .wb-ws-facts span{font-size:11px}.wb-room.wb-field .wb-field-aside .wb-ws-facts b{font-size:12px}
+  .wb-room.wb-field .wb-ws-footer{flex-wrap:wrap;padding:12px 14px}.wb-room.wb-field .wb-ws-footer-info{width:100%}
+  .wb-room.wb-field .wb-ws-footer-info span,.wb-room.wb-field .wb-life-settings-foot code{white-space:normal;overflow-wrap:anywhere}
+}
+
+.wb-earth-hint-touch,.wb-earth-bottom .wb-earth-hint-touch,.wb-studio-mobile-nav,.wb-studio-mobile-pan{display:none}
+/* Scene-specific touch layout: keep the map usable and the project index legible. */
+@media (max-width:760px){
+  .wb-earth-hint-desktop,.wb-earth-bottom .wb-earth-hint-desktop{display:none}
+  .wb-earth-hint-touch,.wb-earth-bottom .wb-earth-hint-touch{display:inline}
+  .wb-earth-top{left:10px;right:10px;top:10px;gap:4px}
+  .wb-earth-brand{gap:5px}.wb-earth-brand>span:nth-child(2){font-size:11px}
+  .wb-earth-control{min-height:40px;font-size:11px;padding:5px 8px}
+  .wb-earth-zoombar button{width:44px;height:44px}
+  .wb-earth-close,.wb-earth-card-close{min-width:40px;min-height:40px}
+  .wb-earth-search,.wb-studio-search input,.wb-llib-search input{font-size:16px}
+  .wb-earth-index-list{grid-template-columns:minmax(0,1fr)}
+  .wb-earth-project-card{min-height:64px;padding:8px 10px}
+  .wb-earth-index.is-deck{left:8px;right:8px;bottom:8px;max-height:min(44%,280px)}
+  .wb-earth.is-landing .wb-earth-inspector.is-map-card{left:8px!important;right:8px!important;bottom:8px!important;max-height:min(58%,340px)!important}
+  .wb-earth.is-landing .wb-earth-inspector .wb-anchor-record,.wb-earth.is-landing .wb-earth-inspector .wb-earth-note{margin-left:0}
+  .wb-earth-card-actions .wb-btn{min-height:44px}
+  .wb-studio-viewport{overflow:auto;touch-action:pan-x pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .wb-studio:not(.is-room) .wb-studio-stage-wrap{height:auto;min-height:0;aspect-ratio:1040/600}
+  .wb-studio-plan.wb-atelier-plan{position:relative;left:auto;top:auto;inset:auto;width:100%;height:auto;aspect-ratio:1040/600;margin:0;transform:none!important}
+  .wb-studio.is-room .wb-studio-plan.wb-atelier-plan{width:720px;height:416px;aspect-ratio:auto}
+  .wb-atelier-roombar{position:sticky;left:0;top:0;width:calc(100vw - 36px);width:min(100%,calc(100cqw - 36px));max-width:100%;box-sizing:border-box;flex-wrap:wrap}
+  .wb-atelier-back,.wb-atelier-tabs button,.wb-scene-details-toggle{min-height:40px;font-size:11px}
+  .wb-atelier-tabs{max-width:100%}
+  .wb-studio-mobile-nav{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+  .wb-studio-mobile-nav button{flex:none;min-height:44px;max-width:200px;padding:6px 12px;border:1px solid rgba(201,224,203,.35);border-radius:8px;background:rgba(37,56,47,.5);color:#f2f8ef;font:inherit;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wb-studio-mobile-pan{display:block;margin:0;color:rgba(226,238,229,.72);font-size:12px;line-height:1.4}
+  .wb-llib-svg{min-width:0;width:100%;height:auto}
+  .wb-llib-stage{overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .wb-llib-tab,.wb-llib-project-index button{min-height:40px;font-size:12px}
+  .wb-llib-project-index{max-width:100%;-webkit-overflow-scrolling:touch}
+  .wb-llib-stage-wrap{height:auto;min-height:0;max-height:none}
+}
+/* Also fit a narrow embedded workbench inside a wide desktop browser. */
+@container wb-workbench (max-width:600px){
+  .wb-earth-top{left:10px;right:10px;top:10px;gap:4px}
+  .wb-earth-brand{gap:5px}.wb-earth-brand>span:nth-child(2){font-size:11px}
+  .wb-earth-clock,.wb-earth-caption,.wb-earth-intro,.wb-earth-focus-hint,.wb-earth-index-hint{display:none}
+  .wb-earth-control{min-height:40px;font-size:11px;padding:5px 8px}
+  .wb-earth-zoombar{right:10px;bottom:48px}.wb-earth-zoombar button{width:44px;height:44px}
+  .wb-earth-close,.wb-earth-card-close{min-width:40px;min-height:40px}
+  .wb-earth-search,.wb-studio-search input,.wb-llib-search input{font-size:16px}
+  .wb-earth-index.is-deck{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:min(44%,280px);padding:11px 12px 9px}
+  .wb-earth-index-list{grid-template-columns:minmax(0,1fr)}.wb-earth-project-card{min-height:64px;padding:8px 10px}
+  .wb-earth-inspector,.wb-earth.is-landing .wb-earth-inspector.is-map-card{left:8px!important;right:8px!important;top:auto!important;bottom:8px!important;width:auto!important;max-height:min(58%,340px)!important;border-radius:16px;padding:12px 16px 10px;overflow:auto}
+  .wb-earth.is-landing .wb-earth-inspector.is-map-card .wb-earth-card-tail{display:none!important}
+  .wb-earth.is-landing .wb-earth-inspector .wb-anchor-record,.wb-earth.is-landing .wb-earth-inspector .wb-earth-note{margin-left:0}
+  .wb-earth-card-actions .wb-btn{min-height:44px}
+  .wb-studio{height:auto;min-height:0;overflow:auto}.wb-studio-top{position:relative;flex-direction:column;gap:8px;padding:10px 0 8px;background:none;pointer-events:auto}
+  .wb-studio-top p{white-space:normal}.wb-studio-search{flex:1 1 auto;width:100%;min-width:0}
+  .wb-studio-body{position:relative;inset:auto;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .wb-studio-stage-wrap{height:400px;min-height:0}.wb-studio:not(.is-room) .wb-studio-stage-wrap{height:auto;min-height:0;aspect-ratio:1040/600}
+  .wb-studio-stagebar{top:8px;left:12px;right:12px;flex-wrap:wrap;gap:6px}.wb-studio-stage-count,.wb-studio-zoom{display:none}
+  .wb-studio.is-room .wb-studio-top,.wb-studio.is-room .wb-studio-stagebar{display:none}
+  .wb-studio-inspector,.wb-studio.is-room .wb-studio-inspector{height:auto;max-height:none;padding:12px 0 0;border-left:0;border-top:1px solid rgba(184,206,188,.14);overflow:visible;background:none}
+  .wb-studio-viewport{overflow:auto;touch-action:pan-x pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .wb-studio-plan.wb-atelier-plan,.wb-studio.is-room .wb-studio-plan.wb-atelier-plan{position:relative;left:auto;top:auto;inset:auto;width:100%;height:auto;aspect-ratio:1040/600;margin:0;transform:none!important}
+  .wb-studio.is-room .wb-studio-plan.wb-atelier-plan{width:720px;height:416px;aspect-ratio:auto}
+  .wb-atelier-scene{padding:0}.wb-atelier-legendbar{display:none}
+  .wb-atelier-roombar{position:sticky;left:0;right:auto;top:0;width:min(100%,calc(100cqw - 36px));max-width:100%;box-sizing:border-box;flex-wrap:wrap}
+  .wb-atelier-roombar-title small{display:none}.wb-atelier-back,.wb-atelier-tabs button,.wb-scene-details-toggle{min-height:40px;font-size:11px}.wb-atelier-tabs{max-width:100%}
+  .wb-studio-mobile-nav{display:flex;gap:6px;overflow-x:auto;max-width:100%;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+  .wb-studio-mobile-nav button{flex:none;min-height:44px;max-width:200px;padding:6px 12px;border:1px solid rgba(201,224,203,.35);border-radius:8px;background:rgba(37,56,47,.5);color:#f2f8ef;font:inherit;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wb-studio-mobile-pan{display:block;margin:0;color:rgba(226,238,229,.72);font-size:12px;line-height:1.4}
+  .wb-llib-top{height:auto;flex-wrap:wrap;padding:10px 10px 0;gap:8px}.wb-llib-head-actions{width:100%;padding-top:0}.wb-llib-search{flex:1 1 auto;width:auto}
+  .wb-llib-body{position:relative;inset:auto;display:flex;flex-direction:column}.wb-llib-stage-wrap{height:auto;min-height:0;max-height:none;flex:none;padding:0 4px 8px}
+  .wb-llib-stagebar{height:auto;min-height:38px;flex-wrap:wrap;padding:5px 0;gap:6px}.wb-llib-crumb{width:100%}.wb-llib-crumb span{display:none}.wb-llib-tabs{order:3;width:100%}
+  .wb-llib-stage{overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.wb-llib-svg{min-width:0;width:100%;height:auto}
+  .wb-llib-tab,.wb-llib-project-index button{min-height:40px;font-size:12px}.wb-llib-project-index{max-width:100%;-webkit-overflow-scrolling:touch}
+  .wb-llib-inspector{border-left:0;border-top:1px solid rgba(208,183,145,.14);padding:14px}
+}
 
 `
 
@@ -4819,6 +5041,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 
     function earthOrbitDistance() {
       return typeof window !== 'undefined' && window.innerWidth >= 1200 ? 4.8 : 5.6
+    }
+
+    function earthPinchDistance(distance, startSpan, currentSpan) {
+      if (!Number.isFinite(distance) || !Number.isFinite(startSpan) || !Number.isFinite(currentSpan) || startSpan <= 0 || currentSpan <= 0) return distance
+      return Math.max(1.52, Math.min(8, distance * startSpan / currentSpan))
     }
 
     function earthOrbitEye(view) {
@@ -5397,6 +5624,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const [cardAnchor, setCardAnchor] = useState(null)
       const activeMedia = useProjectMedia(active?.id, active?.representativeImage?.path || '')
       const dragRef = useRef(null)
+      const touchPointsRef = useRef(new Map())
+      const pinchRef = useRef(null)
 
       useEffect(() => {
         stateRef.current.playing = playing
@@ -5963,11 +6192,34 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         if (event.button !== 0 || flight || stateRef.current.cameraOverride) return
         const canvas = canvasRef.current
         canvas?.setPointerCapture?.(event.pointerId)
+        if (event.pointerType === 'touch') {
+          const points = touchPointsRef.current
+          if (points.size >= 2) return
+          points.set(event.pointerId, { x: event.clientX, y: event.clientY })
+          if (points.size === 2) {
+            const [a, b] = [...points.values()]
+            pinchRef.current = { span: Math.hypot(a.x - b.x, a.y - b.y), distance: stateRef.current.targetDistance || stateRef.current.distance }
+            dragRef.current = null
+            stateRef.current.dragging = true
+            setPlaying(false)
+            return
+          }
+        }
         dragRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, yaw: stateRef.current.yaw, pitch: stateRef.current.pitch }
         stateRef.current.dragging = true
         setPlaying(false)
       }
       const pointerMove = (event) => {
+        const points = touchPointsRef.current
+        if (event.pointerType === 'touch' && points.has(event.pointerId)) {
+          points.set(event.pointerId, { x: event.clientX, y: event.clientY })
+          if (pinchRef.current && points.size === 2) {
+            const [a, b] = [...points.values()]
+            const nextDistance = earthPinchDistance(pinchRef.current.distance, pinchRef.current.span, Math.hypot(a.x - b.x, a.y - b.y))
+            stateRef.current.distance = stateRef.current.targetDistance = nextDistance
+            return
+          }
+        }
         const drag = dragRef.current
         if (!drag || drag.id !== event.pointerId) return
         const s = stateRef.current
@@ -5977,6 +6229,15 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         s.targetPitch = s.pitch
       }
       const pointerUp = (event) => {
+        if (event.pointerType === 'touch' && touchPointsRef.current.has(event.pointerId)) {
+          touchPointsRef.current.delete(event.pointerId)
+          pinchRef.current = null
+          if (touchPointsRef.current.size === 1) {
+            const [id, point] = [...touchPointsRef.current.entries()][0]
+            dragRef.current = { id, x: point.x, y: point.y, yaw: stateRef.current.yaw, pitch: stateRef.current.pitch }
+            return
+          }
+        }
         if (dragRef.current?.id !== event.pointerId) return
         dragRef.current = null
         stateRef.current.dragging = false
@@ -6057,7 +6318,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               h('span', { className: 'wb-earth-caption' }, tr('earthSubtitle'))),
             h('div', { className: 'wb-earth-actions' },
               h('span', { className: 'wb-earth-clock' }, new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(clock)),
-              h('button', { type: 'button', className: cx('wb-earth-control', playing && 'is-on'), onClick: togglePlay, 'aria-pressed': playing, title: tr('earthPlayHint') }, playing ? 'Ⅱ' : '▶'),
+              h('button', { type: 'button', className: cx('wb-earth-control', playing && 'is-on'), onClick: togglePlay, 'aria-pressed': playing, 'aria-label': tr('earthPlayHint'), title: tr('earthPlayHint') }, playing ? 'Ⅱ' : '▶'),
               !panorama ? h('button', { type: 'button', className: cx('wb-earth-control', indexOpen && 'is-on'), onClick: showIndex, 'aria-expanded': indexVisible }, tr('earthIndex'), ' ', h('span', null, String(projects.length))) : null,
               h('button', { type: 'button', className: cx('wb-earth-control', panorama && 'is-on'), onClick: togglePanorama, 'aria-pressed': panorama }, tr('earthPanorama'), ' ⤢'))),
           h('div', { className: 'wb-earth-intro' },
@@ -6140,7 +6401,9 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 h('button', { type: 'button', className: 'wb-btn ghost', onClick: () => openFromEarth(active) }, tr('earthOpenRoom')))),
             h('p', { className: 'wb-earth-disclaimer' }, tr('earthLayoutNote'))) : !indexVisible ? h('aside', { className: 'wb-earth-inspector is-empty' },
             h('div', { className: 'wb-earth-overline' }, tr('earthProjectOverline')),
-            h('p', { className: 'wb-earth-empty-copy' }, tr('earthSelectHint'))) : null,
+            h('p', { className: 'wb-earth-empty-copy' },
+              h('span', { className: 'wb-earth-hint-desktop' }, tr('earthSelectHint')),
+              h('span', { className: 'wb-earth-hint-touch' }, tr('earthTouchSelectHint')))) : null,
           mediaPicker && active ? h(ProjectMediaPicker, { project: active, tr, onClose: () => setMediaPicker(false), onApply: chooseRepresentative }) : null,
           landing ? h('div', { className: 'wb-earth-landing-note', role: 'status' },
             h('span', { className: 'wb-earth-landing-dot' }),
@@ -6154,10 +6417,13 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h('div', { className: 'wb-earth-bottom' },
             h('span', null, h('i', { className: 'wb-earth-live-dot' }), tr('earthDayNight')),
             isLanding ? h('span', null, tr('earthTerrainAssist')) : null,
-            h('span', null, tr('earthDragHint')),
+            h('span', { className: 'wb-earth-hint-desktop' }, tr('earthDragHint')),
+            h('span', { className: 'wb-earth-hint-touch' }, tr('earthTouchHint')),
             h('span', { className: 'wb-earth-focus-hint' }, tr('earthFocusHint'))),
           flight?.phase === 'flying' ? h('div', { className: 'wb-earth-flight' }, h('span', { className: 'wb-earth-flight-dot' }), tr('earthFlying', { name: flight.project.displayName || flight.project.name })) : null,
-          panorama ? h('button', { type: 'button', className: 'wb-earth-restore', onClick: () => setPanorama(false) }, tr('earthExitPanorama'), ' ⤡') : null),
+          panorama ? h('button', { type: 'button', className: 'wb-earth-restore', onClick: () => setPanorama(false) },
+            h('span', { className: 'wb-earth-hint-desktop' }, tr('earthExitPanorama')),
+            h('span', { className: 'wb-earth-hint-touch' }, tr('earthTouchExitPanorama')), ' ⤡') : null),
         h('div', { className: 'wb-earth-credit' }, tr('earthCredit')))
     }
 
@@ -6969,6 +7235,9 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const pointerDown = (event) => {
+        // On small touch screens, use the native scroll container rather than
+        // updating a desktop camera transform that the mobile layout ignores.
+        if (event.pointerType === 'touch' && event.currentTarget?.clientWidth <= 760) return
         if (event.button !== 0) return
         dragRef.current = {
           pointerId: event.pointerId, x: event.clientX, y: event.clientY,
@@ -7509,6 +7778,10 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 className: 'wb-studio-plan wb-atelier-plan',
                 style: { transform: `translate(${cameraState.x}px, ${cameraState.y}px) scale(${cameraState.z})` },
               }, room ? detail : overview))),
+          room
+            ? h('p', { className: 'wb-studio-mobile-pan' }, tr('sceneStudioMobilePan'))
+            : h('nav', { className: 'wb-studio-mobile-nav', 'aria-label': tr('sceneStudioMobileRooms') },
+              rooms.map((item) => h('button', { key: item.id, type: 'button', onClick: () => enterRoom(item) }, `${item.label} · ${item.projects.length}`))),
           h('aside', { className: 'wb-studio-inspector', 'aria-live': 'polite' },
             active ? h(React.Fragment, null,
               h('div', { className: 'wb-studio-inspector-overline' }, tr('sceneStudioSelected'), activeRoom ? ' · ' + activeRoom.label : ''),
@@ -7918,11 +8191,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 })) : null,
               h('td', { className: 'name' }, h('span', { 'data-wb-morph-title': '1' }, p.pinned ? '★ ' : '', p.displayName || p.name),
                 p.needsFollowup ? h('span', { className: 'wb-chip accent', style: { marginLeft: '6px' } }, tr('followupNew')) : null),
-              h('td', null, h(StatusPill, { status: p.status, tr })),
-              h('td', null, (p.sources || []).map((s) => h('span', { className: 'wb-chip', key: s, style: { marginRight: '3px' } }, sourceLabel(s, tr)))),
-              h('td', { className: 'num' }, relTime(p.lastActivity, tr)),
-              h('td', { className: 'num' }, fmtBytes(p.sizeBytes)),
-              h('td', { className: 'path' }, p.path))
+              h('td', { 'data-label': tr('status') }, h(StatusPill, { status: p.status, tr })),
+              h('td', { 'data-label': tr('sourcesLabel') }, (p.sources || []).map((s) => h('span', { className: 'wb-chip', key: s, style: { marginRight: '3px' } }, sourceLabel(s, tr)))),
+              h('td', { className: 'num', 'data-label': tr('lastActivity') }, relTime(p.lastActivity, tr)),
+              h('td', { className: 'num', 'data-label': tr('size') }, fmtBytes(p.sizeBytes)),
+              h('td', { className: 'path', 'data-label': tr('path') }, p.path))
           }))))
     }
 
@@ -8978,7 +9251,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             parent ? h('button', { className: 'wb-link', onClick: () => onSelect(parent), title: parent.displayName || parent.name }, parent.displayName || parent.name) : null),
           h('div', { className: 'wb-room-top-actions' },
             onHandoff ? h('button', { className: 'wb-btn primary', onClick: () => onHandoff(project), disabled: !project.path }, h(Glyph, { name: 'spark', size: 14 }), tr('handoff')) : null,
-            h('button', { className: 'wb-btn ghost wb-room-open', onClick: () => onOpen(project.path) }, h(Glyph, { name: 'folder', size: 14 }), h('span', null, tr('openFolder'))))),
+            h('button', { className: 'wb-btn ghost wb-room-open', onClick: () => onOpen(project.path), 'aria-label': tr('openFolder') }, h(Glyph, { name: 'folder', size: 14 }), h('span', null, tr('openFolder'))))),
         h('div', { className: cx('wb-field-hero', !preview && 'is-empty') },
           preview ? h('button', { className: 'wb-field-media', type: 'button', onClick: () => chooseChapter('outputs'), 'aria-label': `${previewLabel} · ${tr('wsViewAllOutputs')}` },
             h('span', { className: 'wb-field-media-fallback' }, h('b', null, projectMark(project)), h('span', null, tr('roomNoCover'))),
@@ -10380,7 +10653,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', { className: 'wb-brand' },
               h('div', { className: 'wb-brand-mark' }, h(WorkbenchGlyph, { size: 21 })),
               h('div', { style: { minWidth: 0 } },
-                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.1.0')),
+                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.1.1')),
                 h('div', { className: 'wb-subtitle' }, tr('subtitle')))),
             h('div', { className: 'wb-header-spacer' }),
             h('div', { className: 'wb-scan-state' },

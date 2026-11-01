@@ -99,3 +99,23 @@ test('the upper delay bound is accepted', { skip: !hasDependencies, timeout: 100
     assert.match(String(chunk), /http:\/\/127\.0\.0\.1:\d+\//)
   } finally { child.kill() }
 })
+
+test('a bounded panel width simulates an embedded narrow client without changing the viewport', { skip: !hasDependencies, timeout: 10000 }, async () => {
+  const child = spawn(process.execPath, ['dev/preview.mjs'], { cwd: path.resolve('.'), env: { ...process.env, ATLAS_PREVIEW_PORT: '0', ATLAS_PREVIEW_SAVE_MODE: 'readonly', ATLAS_PREVIEW_SAVE_DELAY_MS: '0', ATLAS_PREVIEW_CLIENT_FILE: '', ATLAS_PREVIEW_PANEL_WIDTH: '390' }, stdio: ['ignore', 'pipe', 'pipe'] })
+  try {
+    const [chunk] = await once(child.stdout, 'data')
+    const url = String(chunk).match(/http:\/\/127\.0\.0\.1:\d+\//)?.[0]
+    assert.ok(url)
+    const html = await (await fetch(url)).text()
+    assert.match(html, /#root\{width:390px;max-width:100%;\}/)
+    assert.match(html, /name="viewport" content="width=device-width,initial-scale=1"/)
+  } finally { child.kill() }
+})
+
+test('invalid or unbounded panel widths are rejected', { skip: !hasDependencies, timeout: 10000 }, () => {
+  for (const value of ['239', '2001', '-1', '1.5', 'x']) {
+    const result = spawnSync(process.execPath, ['dev/preview.mjs'], { cwd: path.resolve('.'), env: { ...process.env, ATLAS_PREVIEW_SAVE_MODE: 'readonly', ATLAS_PREVIEW_SAVE_DELAY_MS: '0', ATLAS_PREVIEW_CLIENT_FILE: '', ATLAS_PREVIEW_PANEL_WIDTH: value }, encoding: 'utf8', timeout: 3000 })
+    assert.notEqual(result.status, 0, `must reject ${value}`)
+    assert.match(result.stderr, /integer between 240 and 2000/)
+  }
+})

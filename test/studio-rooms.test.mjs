@@ -122,3 +122,21 @@ test('room selection and returning to overview preserve existing project actions
   nodes.find((node) => hasClass(node, 'wb-atelier-back')).props.onClick()
   assert.deepEqual(calls[1], ['room', 'overview'])
 })
+
+test('mobile room shortcuts open each actual room and preserve the selected project', () => {
+  const projects = makeProjects(25, 'persistent').concat(makeProjects(3, 'incubating'))
+  const rooms = scenes.studioRooms(projects, projects, tr)
+  const calls = []
+  const nodes = descendants(render(projects, 'overview', {
+    setRoomId: (id) => calls.push(['room', id]), onActive: (id) => calls.push(['active', id]),
+  }))
+  const nav = nodes.find((node) => hasClass(node, 'wb-studio-mobile-nav'))
+  const buttons = descendants(nav).filter((node) => node.type === 'button')
+  assert.equal(buttons.length, rooms.length)
+  for (let i = 0; i < buttons.length; i++) {
+    calls.length = 0
+    buttons[i].props.onClick()
+    assert.deepEqual(calls[0], ['room', rooms[i].id])
+    assert.deepEqual(calls[1], ['active', rooms[i].projects[0].id])
+  }
+})

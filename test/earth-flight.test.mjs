@@ -55,6 +55,39 @@ test('night terrain assistance fades in only as the camera approaches the surfac
   assert.equal(assist([0, 0, 1.01]), landed, 'effect is bounded close to the surface')
 })
 
+test('touch drag rotates and two-finger pinch zooms within safe camera limits', () => {
+  const helperStart = source.indexOf('    function earthPinchDistance')
+  const helperEnd = source.indexOf('\n    function earthOrbitEye', helperStart)
+  const gestureStart = source.indexOf('      const pointerDown = (event) => {', source.indexOf('function EarthView'))
+  const gestureEnd = source.indexOf('\n      const wheel = (event) => {', gestureStart)
+  assert.ok(helperStart >= 0 && helperEnd > helperStart && gestureStart >= 0 && gestureEnd > gestureStart)
+  const create = new Function(`${source.slice(helperStart, helperEnd)}
+    const stateRef = { current: { yaw: 0, pitch: 0, distance: 4, targetDistance: 4, dragging: false } }
+    const canvasRef = { current: { setPointerCapture() {} } }
+    const dragRef = { current: null }, pinchRef = { current: null }, touchPointsRef = { current: new Map() }
+    const flight = null; const setPlaying = () => {}
+    ${source.slice(gestureStart, gestureEnd)}
+    return { stateRef, pointerDown, pointerMove, pointerUp }`)
+  const g = create()
+  const event = (id, x, y) => ({ pointerId: id, pointerType: 'touch', button: 0, clientX: x, clientY: y })
+  g.pointerDown(event(1, 0, 0))
+  g.pointerMove(event(1, 20, 10))
+  assert.notEqual(g.stateRef.current.yaw, 0)
+  g.pointerDown(event(2, 120, 10))
+  g.pointerMove(event(2, 220, 10))
+  assert.equal(g.stateRef.current.distance, 2, 'spreading fingers moves closer')
+  g.pointerMove(event(2, 2000, 10))
+  assert.equal(g.stateRef.current.distance, 1.52, 'zoom-in is bounded')
+  g.pointerMove(event(2, 21, 10))
+  assert.equal(g.stateRef.current.distance, 8, 'zoom-out is bounded')
+  g.pointerUp(event(2, 21, 10))
+  const yaw = g.stateRef.current.yaw
+  g.pointerMove(event(1, 35, 10))
+  assert.notEqual(g.stateRef.current.yaw, yaw, 'remaining finger can continue dragging')
+  g.pointerUp(event(1, 35, 10))
+  assert.equal(g.stateRef.current.dragging, false)
+})
+
 test('a representative image selects only its own folder, including legacy path-only overrides', () => {
   const start = source.indexOf('    function mediaMatchesRepresentative')
   const end = source.indexOf('\n    function ProjectMediaPicker', start)
