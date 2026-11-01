@@ -1,11 +1,16 @@
 import { promises as fs } from 'node:fs'
+import { rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { Writable } from 'node:stream'
 import { DatabaseSync } from 'node:sqlite'
 
 const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'dsh-workbench-smoke-'))
 process.env.DSH_WORKBENCH_DATA = tmp
 const fixture = path.resolve('..', `.wb-verify-${process.pid}`)
+const linkedRoot = path.join(tmp, 'linked')
+const secondLinkedRoot = path.join(tmp, 'second-linked')
+const conventionRoot = path.resolve('..', `.wb-convention-${process.pid}`)
 const codexDb = path.join(tmp, 'codex-state.sqlite')
 const codexLog = path.join(tmp, 'codex-rollout.jsonl')
 await fs.writeFile(codexLog, [
@@ -27,9 +32,22 @@ codexSeed.prepare(`INSERT INTO threads VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).r
 )
 codexSeed.close()
 process.env.DSH_WORKBENCH_CODEX_DB = codexDb
-process.on('exit', () => { try { fs.rmSync(fixture, { recursive: true, force: true }) } catch { /* best effort */ } })
+process.on('exit', () => {
+  for (const target of [fixture, conventionRoot, tmp]) {
+    try { rmSync(target, { recursive: true, force: true }) } catch { /* best effort */ }
+  }
+})
 await fs.mkdir(path.join(fixture, 'output'), { recursive: true })
+await fs.mkdir(path.join(linkedRoot, 'output'), { recursive: true })
+await fs.mkdir(path.join(secondLinkedRoot, 'output'), { recursive: true })
+await fs.mkdir(path.join(conventionRoot, 'output'), { recursive: true })
 await fs.writeFile(path.join(fixture, 'output', 'result.png'), Buffer.from('89504e470d0a1a0a', 'hex'))
+await fs.writeFile(path.join(fixture, 'output', 'main-only.png'), Buffer.from('main only'))
+await fs.writeFile(path.join(linkedRoot, 'output', 'result.png'), Buffer.from('linked image'))
+await fs.writeFile(path.join(linkedRoot, 'output', 'linked-only.png'), Buffer.from('only linked'))
+await fs.writeFile(path.join(secondLinkedRoot, 'output', 'result.png'), Buffer.from('second linked image'))
+await fs.writeFile(path.join(conventionRoot, 'output', 'result.png'), Buffer.from('convention'))
+await fs.writeFile(path.join(tmp, 'overrides.json'), JSON.stringify({ p2: { folders: [{ path: linkedRoot, role: 'output' }, { path: secondLinkedRoot, role: 'output' }] } }), 'utf8')
 await fs.writeFile(path.join(fixture, 'workbench.project.json'), JSON.stringify({
   schemaVersion: 1,
   integration: { kind: 'fixture-agent', agent: 'codex', entry: { type: 'cli', value: 'fixture run' }, state: '.dsh/handoff/state.json', apply: 'AGENTS.md' },
@@ -41,7 +59,11 @@ await fs.writeFile(path.join(fixture, 'workbench.project.json'), JSON.stringify(
   ],
   progress: 0.65,
   heartbeatAt: new Date().toISOString(),
-  artifacts: [{ path: 'output/result.png', title: '结果帧', kind: 'image' }],
+  artifacts: [
+    { path: 'output/result.png', title: '主目录结果帧', kind: 'image' },
+    { path: path.join(linkedRoot, 'output', 'result.png'), title: '关联目录结果帧', kind: 'image' },
+    { path: path.join(secondLinkedRoot, 'output', 'result.png'), title: '第二关联目录结果帧', kind: 'image' },
+  ],
 }), 'utf8')
 await fs.writeFile(path.join(fixture, 'status.json'), JSON.stringify({
   state: 'waiting',
@@ -63,6 +85,12 @@ await fs.writeFile(path.join(tmp, 'catalog.json'), JSON.stringify({
     path: fixture, drive: 'C:', group: 'fixture',
     markers: ['workbench.project.json'], hasGit: false, hasDsh: false,
     codeFiles: 2, sizeBytes: 128, fileCount: 2,
+    created: '2026-01-01T00:00:00.000Z', lastActivity: new Date().toISOString(),
+    status: 'active', sources: ['folder'], childrenCount: 0, topLevel: true,
+  }, {
+    id: 'p3', name: 'convention-project', displayName: 'Convention Project',
+    path: conventionRoot, drive: 'C:', group: 'fixture', markers: [], hasGit: false, hasDsh: false,
+    codeFiles: 0, sizeBytes: 10, fileCount: 1,
     created: '2026-01-01T00:00:00.000Z', lastActivity: new Date().toISOString(),
     status: 'active', sources: ['folder'], childrenCount: 0, topLevel: true,
   }],
@@ -140,6 +168,16 @@ async function call(method, route, body, origin = 'http://127.0.0.1:64382') {
   await routes.get(route.split('?')[0])(req, res)
   return res
 }
+async function readArtifact(route) {
+  const chunks = []
+  const res = new Writable({ write(chunk, _encoding, done) { chunks.push(Buffer.from(chunk)); done() } })
+  res.writeHead = (status) => { res.status = status }
+  const finished = new Promise((resolve, reject) => { res.on('finish', resolve); res.on('error', reject) })
+  const req = { method: 'GET', url: route, headers: { host: '127.0.0.1:64382' } }
+  await routes.get('/dsh-workbench/api/artifact')(req, res)
+  await finished
+  return { status: res.status, body: Buffer.concat(chunks) }
+}
 
 const state = await call('GET', '/dsh-workbench/api/state')
 const originalProject = state.body.projects.find((project) => project.id === 'p1')
@@ -158,10 +196,21 @@ if (runtimeProject?.runtime?.source !== 'status') throw new Error(`runtime statu
 if (runtimeProject.runtime.state !== 'waiting' || runtimeProject.runtime.stage?.label !== '等待确认') {
   throw new Error(`runtime state/stage wrong: ${JSON.stringify(runtimeProject.runtime)}`)
 }
-if (runtimeProject.runtime.artifacts?.[0]?.url !== '/dsh-workbench/api/artifact?id=p2&path=output%2Fresult.png') {
-  throw new Error(`runtime artifact url wrong: ${JSON.stringify(runtimeProject.runtime.artifacts)}`)
+const sameNameArtifacts = runtimeProject.runtime.artifacts.filter((artifact) => artifact.path === 'output/result.png')
+if (sameNameArtifacts.length !== 3 || new Set(sameNameArtifacts.map((artifact) => artifact.id)).size !== 3) {
+  throw new Error(`distinct linked artifacts collapsed: ${JSON.stringify(runtimeProject.runtime.artifacts)}`)
 }
-if (state.body.runtime?.measured !== 1 || state.body.runtime?.waiting !== 1) {
+for (const [folder, expected] of [[0, Buffer.from('89504e470d0a1a0a', 'hex')], [1, Buffer.from('linked image')], [2, Buffer.from('second linked image')]]) {
+  const item = sameNameArtifacts.find((artifact) => artifact.folder === folder)
+  if (!item?.url.endsWith(`&folder=${folder}`)) throw new Error(`wrong artifact root: ${JSON.stringify(item)}`)
+  const response = await readArtifact(item.url)
+  if (response.status !== 200 || !response.body.equals(expected)) throw new Error(`wrong artifact bytes from folder ${folder}`)
+}
+const conventionProject = state.body.projects.find((project) => project.id === 'p3')
+if (conventionProject?.runtime?.source !== 'convention' || conventionProject.runtime.state !== 'unknown') {
+  throw new Error(`discovered file incorrectly implies runtime ready: ${JSON.stringify(conventionProject?.runtime)}`)
+}
+if (state.body.runtime?.measured !== 2 || state.body.runtime?.waiting !== 1) {
   throw new Error(`runtime stats wrong: ${JSON.stringify(state.body.runtime)}`)
 }
 const traversal = await call('GET', '/dsh-workbench/api/artifact?id=p2&path=..%2Fpackage.json')
@@ -183,6 +232,56 @@ const mediaItem = projectMedia.body.items.find((item) => item.path === 'output/r
 if (!mediaItem.url?.includes('folder=')) throw new Error('project media folder index missing')
 const mediaProbe = await call('GET', '/dsh-workbench/api/project-media?id=p2&path=output%2Fresult.png')
 if (mediaProbe.status !== 200 || mediaProbe.body.item?.path !== 'output/result.png') throw new Error('project media probe failed: ' + JSON.stringify(mediaProbe.body))
+const linkedProbe = await call('GET', '/dsh-workbench/api/project-media?id=p2&path=output%2Flinked-only.png')
+if (linkedProbe.status !== 200 || linkedProbe.body.item?.folder !== 1) throw new Error(`missing folder should search linked roots: ${JSON.stringify(linkedProbe.body)}`)
+const linkedLegacyArtifact = await readArtifact('/dsh-workbench/api/artifact?id=p2&path=output%2Flinked-only.png')
+if (linkedLegacyArtifact.status !== 200 || !linkedLegacyArtifact.body.equals(Buffer.from('only linked'))) {
+  throw new Error('legacy artifact link without folder did not search linked roots')
+}
+await call('POST', '/dsh-workbench/api/override', { id: 'p2', patch: { representativeImage: { path: 'output/result.png', folder: 1, title: '关联图片' } } })
+const linkedPinned = await call('GET', '/dsh-workbench/api/project-media?id=p2')
+if (linkedPinned.body.representative?.folder !== 1 || !linkedPinned.body.representative?.url.endsWith('&folder=1')) {
+  throw new Error(`pinned image resolved to wrong root: ${JSON.stringify(linkedPinned.body.representative)}`)
+}
+await call('POST', '/dsh-workbench/api/override', { id: 'p2', patch: { representativeImage: { path: 'output/main-only.png', folder: 1, title: '缺失图片' } } })
+const missingPinned = await call('GET', '/dsh-workbench/api/project-media?id=p2')
+if (!missingPinned.body.pinnedMissing || missingPinned.body.representative !== null) {
+  throw new Error(`missing pinned image silently switched roots: ${JSON.stringify(missingPinned.body)}`)
+}
+await call('POST', '/dsh-workbench/api/override', { id: 'p2', patch: { representativeImage: { path: 'output/result.png', folder: 2, title: '第二关联图片' } } })
+const detachFirst = await call('DELETE', '/dsh-workbench/api/project-folders', { id: 'p2', path: linkedRoot })
+if (detachFirst.status !== 200) throw new Error(`could not detach first linked root: ${JSON.stringify(detachFirst.body)}`)
+const movedPinned = await call('GET', '/dsh-workbench/api/project-media?id=p2')
+if (movedPinned.body.representative?.folder !== 1) throw new Error(`pin not preserved when linked root moves: ${JSON.stringify(movedPinned.body.representative)}`)
+const movedImage = await readArtifact(movedPinned.body.representative.url)
+if (!movedImage.body.equals(Buffer.from('second linked image'))) throw new Error('pin switched to a different root after unlink')
+const changedState = await call('GET', '/dsh-workbench/api/state')
+const changedProject = changedState.body.projects.find((project) => project.id === 'p2')
+if (changedProject?.representativeImage?.folder !== 1) throw new Error('project metadata retained obsolete pinned folder index')
+const changedArtifacts = changedProject?.runtime?.artifacts || []
+const secondAfterDetach = changedArtifacts.find((item) => item.title === '第二关联目录结果帧')
+if (secondAfterDetach?.folder !== 1) throw new Error(`runtime cache ignored folder change: ${JSON.stringify(changedArtifacts)}`)
+const detachPinned = await call('DELETE', '/dsh-workbench/api/project-folders', { id: 'p2', path: secondLinkedRoot })
+if (detachPinned.status !== 200) throw new Error('could not detach pinned root')
+const detachedPinned = await call('GET', '/dsh-workbench/api/project-media?id=p2')
+if (!detachedPinned.body.pinnedMissing || detachedPinned.body.representative !== null) throw new Error('detached pinned root silently reused another image')
+const detachedState = await call('GET', '/dsh-workbench/api/state')
+if (detachedState.body.projects.find((project) => project.id === 'p2')?.representativeImage?.folder !== -2) throw new Error('detached pinned root was not marked unavailable')
+for (const endpoint of ['artifact', 'project-media']) {
+  for (const folder of ['-1', '99', '', '1.5']) {
+    const response = await call('GET', `/dsh-workbench/api/${endpoint}?id=p2&path=output%2Fresult.png&folder=${folder}`)
+    if (response.status !== 400) throw new Error(`${endpoint} accepted invalid folder ${folder}: ${response.status}`)
+  }
+}
+// A project-relative junction must not expose a real image outside its authorized root.
+const escapedRoot = path.join(tmp, 'outside')
+await fs.mkdir(escapedRoot)
+await fs.writeFile(path.join(escapedRoot, 'escape.png'), Buffer.from('outside'))
+await fs.symlink(escapedRoot, path.join(fixture, 'escape'), 'junction')
+for (const endpoint of ['artifact', 'project-media']) {
+  const response = await call('GET', `/dsh-workbench/api/${endpoint}?id=p2&path=escape%2Fescape.png&folder=0`)
+  if (response.status !== 404) throw new Error(`${endpoint} followed a junction outside the root: ${response.status}`)
+}
 const mediaTraversal = await call('GET', '/dsh-workbench/api/project-media?id=p2&path=..%2Fpackage.json')
 if (mediaTraversal.status !== 400) throw new Error('project media traversal guard failed: ' + mediaTraversal.status)
 const pinned = await call('POST', '/dsh-workbench/api/override', { id: 'p2', patch: { representativeImage: { path: 'output/result.png', folder: 0, title: '结果帧' } } })
@@ -346,3 +445,4 @@ if (otherLoopback.status !== 403) throw new Error('loopback alias was treated as
 console.log('host smoke ok', { routes: [...routes.keys()].length, saved: saved.length, pathStatus: status.body })
 await fs.rm(tmp, { recursive: true, force: true })
 await fs.rm(fixture, { recursive: true, force: true })
+await fs.rm(conventionRoot, { recursive: true, force: true })

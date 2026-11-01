@@ -227,7 +227,9 @@ export function normalizeRuntime(input, options = {}) {
   const stage = rawStage || (stageLabel ? { id: 'current', label: stageLabel, status: 'running', progress: 0, detail: '' } : null)
   const rawProgress = raw.progress ?? raw.percent ?? stage?.progress ?? 0
   const progress = clamp(number(rawProgress, 0) > 1 ? number(rawProgress, 0) / 100 : number(rawProgress, 0), 0, 1)
-  const state = normalizeRuntimeState(raw.state ?? raw.status ?? raw.phase ?? raw.runState, source === 'none' ? 'unknown' : 'ready')
+  // A source only identifies where evidence came from; it does not establish
+  // readiness. Preserve explicit states, but never infer them from a source.
+  const state = normalizeRuntimeState(raw.state ?? raw.status ?? raw.phase ?? raw.runState, 'unknown')
   return {
     schemaVersion: RUNTIME_SCHEMA_VERSION,
     source,

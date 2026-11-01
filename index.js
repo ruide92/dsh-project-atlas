@@ -162,10 +162,15 @@ function presentProject(p) {
   const rawRepresentative = o && o.representativeImage && typeof o.representativeImage === 'object'
     ? o.representativeImage
     : null
+  const representativeRootKey = String(rawRepresentative?.rootKey || '').slice(0, 40)
+  const representativeFolder = representativeRootKey
+    ? runtimeRoots(p).findIndex((root) => mediaRootKey(root) === representativeRootKey)
+    : (Number.isInteger(rawRepresentative?.folder) ? rawRepresentative.folder : -1)
   const representativeImage = rawRepresentative && typeof rawRepresentative.path === 'string' && rawRepresentative.path.trim()
     ? {
         path: rawRepresentative.path.trim().slice(0, 1000),
-        folder: Number.isInteger(rawRepresentative.folder) ? rawRepresentative.folder : -1,
+        folder: representativeRootKey && representativeFolder < 0 ? -2 : representativeFolder,
+        rootKey: representativeRootKey,
         title: String(rawRepresentative.title || '').slice(0, 160),
       }
     : null
@@ -273,6 +278,10 @@ function runtimeRoots(project) {
   return [...new Set(values.map((value) => path.resolve(value)))]
 }
 
+function mediaRootKey(root) {
+  return crypto.createHash('sha1').update(normalizeKey(root)).digest('hex')
+}
+
 function isInside(root, file) {
   const relative = path.relative(root, file)
   return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
@@ -309,6 +318,8 @@ async function artifactFromFile(project, root, file, meta = {}) {
     if (!(await safeFileInside(root, file))) return null
     const stat = await fs.lstat(file)
     const relative = normalizeRelative(file, root)
+    const folder = runtimeRoots(project).findIndex((item) => normalizeKey(item) === normalizeKey(root))
+    if (folder < 0) return null
     const kind = guessKind(file)
     let preview = ''
     if ((kind === 'text' || kind === 'data') && stat.size <= 256 * 1024) {
@@ -316,12 +327,13 @@ async function artifactFromFile(project, root, file, meta = {}) {
       preview = content.toString('utf8').slice(0, RUNTIME_MAX_PREVIEW_BYTES)
     }
     const url = kind === 'image' && stat.size <= RUNTIME_MAX_MEDIA_BYTES
-      ? `/dsh-workbench/api/artifact?id=${encodeURIComponent(project.id)}&path=${encodeURIComponent(relative)}`
+      ? `/dsh-workbench/api/artifact?id=${encodeURIComponent(project.id)}&path=${encodeURIComponent(relative)}&folder=${folder}`
       : ''
     return {
-      id: crypto.createHash('sha1').update(`${project.id}:${relative}`).digest('hex').slice(0, 12),
+      id: crypto.createHash('sha1').update(`${project.id}:${mediaRootKey(root)}:${relative}`).digest('hex').slice(0, 12),
       title: String(meta.title || path.basename(file)).slice(0, 180),
       path: relative,
+      folder,
       role: String(meta.role || path.basename(path.dirname(file))).slice(0, 60),
       kind,
       mime: String(meta.mime || RUNTIME_MIME[path.extname(file).toLowerCase()] || '').slice(0, 100),
@@ -474,12 +486,15 @@ async function buildRuntime(project) {
     const convention = await collectConventionArtifacts(project, roots)
     if (convention.length) {
       if (runtime) runtime.artifacts = convention
-      else runtime = normalizeRuntime({ state: 'ready', artifacts: convention }, { source: 'convention' })
+      else {
+        runtime = normalizeRuntime({ state: 'unknown' }, { source: 'convention' })
+        runtime.artifacts = convention
+      }
     }
   }
   if (!runtime) return null
   runtime.artifacts = runtime.artifacts
-    .filter((artifact, index, list) => list.findIndex((item) => item.path === artifact.path) === index)
+    .filter((artifact, index, list) => list.findIndex((item) => item.path === artifact.path && item.folder === artifact.folder) === index)
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
     .slice(0, RUNTIME_MAX_ARTIFACTS)
   if (!runtime.heartbeatAt && runtime.artifacts[0]?.createdAt) runtime.heartbeatAt = runtime.artifacts[0].createdAt
@@ -503,7 +518,7 @@ async function mapLimit(items, limit, worker) {
 }
 
 function runtimeFingerprint(project) {
-  return `${project.lastActivity || ''}|${project.sizeBytes || 0}|${project.fileCount || 0}`
+  return JSON.stringify([project.lastActivity || '', project.sizeBytes || 0, project.fileCount || 0, runtimeRoots(project).map(normalizeKey)])
 }
 
 function loadRuntimeDiskCache() {
@@ -539,10 +554,10 @@ async function runtimeForProject(project) {
   const now = Date.now()
   const fingerprint = runtimeFingerprint(project)
   const cached = runtimeCache.get(project.id)
-  if (cached && now - cached.at < RUNTIME_CACHE_MS) return cached.value
+  if (cached && cached.fingerprint === fingerprint && now - cached.at < RUNTIME_CACHE_MS) return cached.value
   const disk = runtimeDiskCache.get(project.id)
   if (disk && disk.fingerprint === fingerprint && now - Number(disk.at || 0) < 15 * 60 * 1000) {
-    runtimeCache.set(project.id, { at: now, value: disk.value })
+    runtimeCache.set(project.id, { at: now, fingerprint, value: disk.value })
     return disk.value
   }
   let value = null
@@ -556,7 +571,7 @@ async function runtimeForProject(project) {
       health: [], artifacts: [], events: [], actions: [],
     }
   }
-  runtimeCache.set(project.id, { at: now, value })
+  runtimeCache.set(project.id, { at: now, fingerprint, value })
   runtimeDiskCache.set(project.id, { at: now, fingerprint, value })
   scheduleRuntimeDiskSave()
   return value
@@ -2012,9 +2027,12 @@ async function handleOverride(req, res) {
       const relative = String(raw.path).replace(/\\/g, '/').trim()
       if (!relative || path.isAbsolute(relative) || relative.split('/').includes('..')) continue
       const folder = Number.isInteger(raw.folder) ? raw.folder : -1
+      const roots = mediaRootsFor(catalog.projects.find((project) => project.id === id))
+      if (folder >= roots.length) { sendJson(res, 400, { ok: false, error: 'bad folder index' }); return }
       next.representativeImage = {
         path: relative.slice(0, 1000),
         folder: folder >= 0 ? folder : -1,
+        rootKey: folder >= 0 ? mediaRootKey(roots[folder]) : '',
         title: String(raw.title || '').slice(0, 160),
       }
       continue
@@ -2172,7 +2190,7 @@ async function scanProjectMedia(project) {
         try { stat = await fs.stat(file) } catch { continue }
         if (!stat.isFile() || stat.size <= 0 || stat.size > RUNTIME_MAX_MEDIA_BYTES) continue
         const relative = normalizeRelative(file, root)
-        const key = path.resolve(file).toLowerCase()
+        const key = `${folder}:${relative.toLowerCase()}`
         if (seen.has(key)) continue
         seen.add(key)
         items.push({
@@ -2196,13 +2214,13 @@ async function scanProjectMedia(project) {
     const runtime = await runtimeForProject(project)
     for (const artifact of runtime?.artifacts || []) {
       if (artifact.kind !== 'image' || !artifact.url) continue
-      const key = path.resolve(String(artifact.path || '')).toLowerCase()
+      const key = `${artifact.folder}:${String(artifact.path || '').toLowerCase()}`
       if (!key || seen.has(key)) continue
       seen.add(key)
       items.push({
         abs: '',
         path: String(artifact.path || ''),
-        folder: -1,
+        folder: artifact.folder,
         role: 'runtime',
         rootLabel: '运行时清单',
         title: String(artifact.title || path.basename(String(artifact.path || ''))).slice(0, 180),
@@ -2221,12 +2239,14 @@ async function scanProjectMedia(project) {
   let representative = null
   let pinnedMissing = false
   if (pinned && pinned.path) {
-    representative = limited.find((item) => item.path === pinned.path && (pinned.folder < 0 || item.folder === pinned.folder))
-      || items.find((item) => item.path === pinned.path)
+    const pinnedFolder = pinned.rootKey ? roots.findIndex((root) => mediaRootKey(root) === pinned.rootKey) : pinned.folder
+    const matchesPin = (item) => item.path === pinned.path && (!pinned.rootKey && pinnedFolder < 0 || item.folder === pinnedFolder)
+    representative = limited.find(matchesPin)
+      || items.find(matchesPin)
       || null
     if (!representative) pinnedMissing = true
   }
-  if (!representative) representative = limited[0] || null
+  if (!representative && !pinnedMissing) representative = limited[0] || null
   return {
     roots: roots.map((root, index) => ({ index, label: path.basename(root) || root, role: mediaRoleFor(project, index) })),
     items: limited.map(({ abs, ...item }) => item),
@@ -2247,8 +2267,12 @@ async function handleProjectMedia(req, res) {
   if (probe) {
     if (path.isAbsolute(probe) || probe.split('/').includes('..')) { sendJson(res, 400, { ok: false, error: 'bad relative path' }); return }
     const roots = mediaRootsFor(project)
-    const folder = Number(url.searchParams.get('folder'))
-    const search = Number.isInteger(folder) && folder >= 0 && folder < roots.length ? [roots[folder]] : roots
+    const folderValue = url.searchParams.get('folder')
+    const folder = folderValue === null ? null : Number(folderValue)
+    if (folderValue !== null && (!/^\d+$/.test(folderValue) || !Number.isSafeInteger(folder) || folder >= roots.length)) {
+      sendJson(res, 400, { ok: false, error: 'bad folder index' }); return
+    }
+    const search = folder === null ? roots : [roots[folder]]
     for (let index = 0; index < search.length; index++) {
       const root = search[index]
       const file = path.resolve(root, probe)
@@ -2257,7 +2281,7 @@ async function handleProjectMedia(req, res) {
         const stat = await fs.lstat(file)
         const extension = path.extname(file).toLowerCase()
         if (!stat.isFile() || !MEDIA_EXTENSIONS.has(extension) || stat.size <= 0 || stat.size > RUNTIME_MAX_MEDIA_BYTES) continue
-        const actualFolder = Number.isInteger(folder) && folder >= 0 ? folder : roots.indexOf(root)
+        const actualFolder = folder === null ? roots.indexOf(root) : folder
         sendJson(res, 200, { ok: true, projectId: id, item: {
           path: normalizeRelative(file, root), folder: actualFolder, role: mediaRoleFor(project, actualFolder),
           rootLabel: path.basename(root) || root, title: path.basename(file).slice(0, 180), kind: 'image',
@@ -2293,8 +2317,12 @@ async function handleArtifact(req, res) {
     path: project.path,
     folders: folders.map((folder) => ({ path: typeof folder === 'string' ? folder : folder?.path })),
   })
-  const folderParam = Number(url.searchParams.get('folder'))
-  const searchRoots = Number.isInteger(folderParam) && folderParam >= 0 && folderParam < roots.length ? [roots[folderParam]] : roots
+  const folderValue = url.searchParams.get('folder')
+  const folderParam = folderValue === null ? null : Number(folderValue)
+  if (folderValue !== null && (!/^\d+$/.test(folderValue) || !Number.isSafeInteger(folderParam) || folderParam >= roots.length)) {
+    sendJson(res, 400, { ok: false, error: 'bad folder index' }); return
+  }
+  const searchRoots = folderParam === null ? roots : [roots[folderParam]]
   let file = ''
   for (const root of searchRoots) {
     const candidate = path.resolve(root, relative)

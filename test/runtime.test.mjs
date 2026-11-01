@@ -35,6 +35,30 @@ test('maps common state aliases and rejects unknown values', () => {
   assert.equal(normalizeRuntimeState('not-a-state', 'unknown'), 'unknown')
 })
 
+test('does not infer runtime readiness from source or discovered artifacts', () => {
+  const artifact = { path: 'output/example.png', kind: 'image' }
+  for (const source of ['none', 'manifest', 'status', 'convention']) {
+    const missing = normalizeRuntime({ artifacts: [artifact] }, { source })
+    assert.equal(missing.state, 'unknown', `${source} without a state`)
+    assert.equal(missing.artifacts[0].path, artifact.path)
+    assert.equal(normalizeRuntime({ state: 'not-a-state' }, { source }).state, 'unknown', `${source} with an invalid state`)
+  }
+
+  // An explicit state remains an explicit state; callers must not synthesize
+  // readiness based only on discovered files.
+  assert.equal(normalizeRuntime({ state: 'ready', artifacts: [artifact] }, { source: 'convention' }).state, 'ready')
+  assert.equal(normalizeRuntime({ state: 'running' }, { source: 'convention' }).state, 'running')
+})
+
+test('preserves explicitly reported runtime states from manifests and status files', () => {
+  for (const source of ['manifest', 'status']) {
+    for (const state of ['unknown', 'ready', 'running', 'waiting', 'blocked', 'failed', 'done']) {
+      assert.equal(normalizeRuntime({ state }, { source }).state, state, `${source}: ${state}`)
+    }
+    assert.equal(normalizeRuntime({ status: 'idle' }, { source }).state, 'ready')
+  }
+})
+
 test('understands percentage progress and percentage stage progress', () => {
   const runtime = normalizeRuntime({ state: 'running', progress: 42, stage: { progress: 0.7 } })
   assert.equal(runtime.progress, 0.7)

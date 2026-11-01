@@ -2,7 +2,9 @@
 
 Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目、技能、Codex / DSH 会话、运行状态与产出，收进一个可缩放的项目工作台。它默认只读，不会替你改写项目；是否把项目交给 Agent，由你在项目页里明确操作。
 
-- 三个场景：工作室、图书馆、时间庭
+版本变化请查看 [更新日志](CHANGELOG.md)。
+
+- 四个场景：地球、工作室、图书馆、时间庭
 - 项目总览、生命周期与本地备注
 - SKILL.md 图谱、DSH / Codex 会话索引
 - 运行状态、产物预览、磁盘与 AI 软件概览
@@ -77,12 +79,13 @@ dsh plugin --profile <profile> add github:ruide92/dsh-project-atlas
 - [架构与数据流](docs/ARCHITECTURE.md)：模块、请求流程、数据目录
 - [隐私与安全](docs/PRIVACY.md)：读取范围、写入范围、公开仓库清洁规则
 - [开发与发布](docs/DEVELOPMENT.md)：本地检查、临时安装、发布流程
+- [开发场景](docs/scene-development.md)：源码级注册、共享项目数据和扩展边界
 - [故障排查](docs/TROUBLESHOOTING.md)：空状态、配置、会话、端口与双工作台冲突
 
 ## 开发
 
 ```bash
-npm test        # 52 项测试
+npm test        # 运行自动化测试
 npm run check   # 语法检查
 ```
 

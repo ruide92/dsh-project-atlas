@@ -8,27 +8,37 @@ window.__ModuleLoader__.load({
     const API = '/dsh-workbench/api'
     const PROJECT_MEDIA_TTL = 45000
     const projectMediaCache = new Map()
+    const projectMediaRequests = new Map()
 
     function loadProjectMedia(projectId, force = false) {
       const key = String(projectId || '')
       if (!key) return Promise.resolve(null)
       const cached = projectMediaCache.get(key)
       if (!force && cached && Date.now() - cached.at < PROJECT_MEDIA_TTL) return Promise.resolve(cached.data)
+      const request = {}
+      projectMediaRequests.set(key, request)
       return fetch(`${API}/project-media?id=${encodeURIComponent(key)}`, { cache: 'no-store' })
         .then(async (response) => {
           const data = await response.json().catch(() => ({}))
           if (!response.ok || data.ok === false) throw new Error(data.error || `HTTP ${response.status}`)
-          projectMediaCache.set(key, { at: Date.now(), data })
+          if (projectMediaRequests.get(key) === request) {
+            projectMediaCache.set(key, { at: Date.now(), data })
+            projectMediaRequests.delete(key)
+          }
           return data
         })
         .catch((error) => {
-          if (cached) return { ...cached.data, stale: true, error: error?.message || String(error) }
+          if (projectMediaRequests.get(key) === request) projectMediaRequests.delete(key)
+          const current = projectMediaCache.get(key)
+          if (current) return { ...current.data, stale: true, error: error?.message || String(error) }
           throw error
         })
     }
 
     function invalidateProjectMedia(projectId) {
-      projectMediaCache.delete(String(projectId || ''))
+      const key = String(projectId || '')
+      projectMediaCache.delete(key)
+      projectMediaRequests.delete(key)
     }
 
     async function copyText(text) {
@@ -258,6 +268,9 @@ window.__ModuleLoader__.load({
         wsAllSessions: '全部会话',
         wsRelations: '项目关系',
         wsUnsaved: '有未保存修改',
+        wsLeaveConfirm: '项目有未保存的修改。确定保存并离开吗？取消将留在当前页面。',
+        wsDiscardTaskConfirm: '任务草稿尚未发送，离开后会丢失。确定放弃草稿并离开吗？',
+        wsChangedDuringSave: '保存期间又有新的修改，请检查后再次离开。',
         wsOutputsSub: '{n} 个文件，按最近更新排序',
         wsNoOutputs: '还没有产出',
         wsNoOutputsSub: '运行任务或写入文件后，产出会自动出现在这里。',
@@ -577,7 +590,7 @@ window.__ModuleLoader__.load({
         earthPlayHint: '暂停或继续自动旋转',
         earthIndex: '项目索引',
         earthIndexFullscreen: '全屏索引',
-        earthIndexEnter: '进入项目',
+        earthIndexEnter: '查看落点',
         earthFocusHint: '双击空白进入全屏',
         earthFocusExitHint: '全屏中 · 双击空白退出',
         earthPanorama: '全屏',
@@ -602,6 +615,7 @@ window.__ModuleLoader__.load({
         earthZoomIn: '拉近',
         earthZoomOut: '拉远',
         earthDayNight: '昼夜来自设备时间',
+        earthTerrainAssist: '夜间落点地形已提亮',
         earthDragHint: '拖动旋转 · 滚轮缩放 · 空格暂停',
         earthFlying: '正在俯冲「{name}」',
         earthTouchdownKicker: 'TOUCHDOWN / 降落完成',
@@ -649,10 +663,21 @@ window.__ModuleLoader__.load({
         earthRecordHint: '活动时间来自本机扫描，不代表任务成功。',
         earthSceneSwitch: '场景',
         sceneDockNote: '固定导航',
+        sceneSettings: '场景设置',
+        sceneSettingsHint: '调整导航顺序、显示和启动场景。设置只保存在此设备。',
+        sceneSettingsStart: '启动场景',
+        sceneSettingsShow: '显示 {name}',
+        sceneSettingsUp: '{name} 上移',
+        sceneSettingsDown: '{name} 下移',
+        sceneSettingsReset: '恢复默认',
+        sceneSettingsStorageError: '无法保存到本地存储；设置仅在本次使用中有效。',
         sceneEarth: '地球',
         sceneStudio: '工作室',
         sceneLibrary: '图书馆',
         sceneTime: '时间庭',
+        sceneShowDetails: '展开项目详情',
+        sceneHideDetails: '收起项目详情',
+        sceneProjectIndex: '项目目录',
         sceneStudioKicker: 'STUDIO / 项目工位',
         sceneStudioTitle: '项目也有自己的工位',
         sceneStudioIntro: '按生命周期分房，按项目分桌。房间只是空间布局，不代表团队、负责人或运行状态。',
@@ -778,6 +803,9 @@ window.__ModuleLoader__.load({
         sceneLibraryMediaFailed: '项目图片读取失败。',
         sceneLibraryExit: '项目列表',
         sceneLibraryNoMatch: '没有匹配的书',
+        sceneLibraryPreviousPage: '上一页',
+        sceneLibraryNextPage: '下一页',
+        sceneLibraryPage: '页',
         contractTitle: '任务契约',
         contractGoal: '目标',
         contractInput: '输入',
@@ -1038,6 +1066,9 @@ window.__ModuleLoader__.load({
         wsSettingsSub: 'Status, tags, folders and project metadata',
         wsTaskEyebrow: 'Hand me a task',
         wsTaskStarter: 'First read the project status, README/AGENTS, and handoff notes; check progress, blockers, and the next step. Do not modify files or start GPU / ComfyUI yet. Give me a minimal executable plan and wait for my confirmation.',
+        wsLeaveConfirm: 'This project has unsaved changes. Save and leave? Cancel stays on this page.',
+        wsDiscardTaskConfirm: 'The task draft has not been sent and will be lost. Discard it and leave?',
+        wsChangedDuringSave: 'Changes were made while saving. Review them before leaving.',
         wsTaskPlaceholder: 'Add a concrete task, or send this opening as-is…',
         wsRun: 'Send to DSH',
         wsComposeHint: 'Ctrl / ⌘ + Enter · safe opening prefilled; add a task if needed',
@@ -1349,7 +1380,7 @@ window.__ModuleLoader__.load({
         earthPlayHint: 'Pause or resume rotation',
         earthIndex: 'Project index',
         earthIndexFullscreen: 'Fullscreen index',
-        earthIndexEnter: 'Enter project',
+        earthIndexEnter: 'View landing',
         earthFocusHint: 'Double-click empty space for fullscreen',
         earthFocusExitHint: 'Fullscreen · double-click empty space to exit',
         earthPanorama: 'Fullscreen',
@@ -1374,6 +1405,7 @@ window.__ModuleLoader__.load({
         earthZoomIn: 'Zoom in',
         earthZoomOut: 'Zoom out',
         earthDayNight: 'Day and night follow device time',
+        earthTerrainAssist: 'Night terrain brightened for inspection',
         earthDragHint: 'Drag to rotate · wheel to zoom · space to pause',
         earthFlying: 'Descending to “{name}”',
         earthTouchdownKicker: 'TOUCHDOWN / LANDED',
@@ -1421,10 +1453,21 @@ window.__ModuleLoader__.load({
         earthRecordHint: 'Activity time comes from the local scan; it does not mean the task succeeded.',
         earthSceneSwitch: 'Scene',
         sceneDockNote: 'Pinned navigation',
+        sceneSettings: 'Scene settings',
+        sceneSettingsHint: 'Choose scene order, visibility and startup scene. Stored on this device.',
+        sceneSettingsStart: 'Startup scene',
+        sceneSettingsShow: 'Show {name}',
+        sceneSettingsUp: 'Move {name} up',
+        sceneSettingsDown: 'Move {name} down',
+        sceneSettingsReset: 'Restore defaults',
+        sceneSettingsStorageError: 'Local storage is unavailable; settings last only for this session.',
         sceneEarth: 'Earth',
         sceneStudio: 'Studio',
         sceneLibrary: 'Library',
         sceneTime: 'Time court',
+        sceneShowDetails: 'Show project details',
+        sceneHideDetails: 'Hide project details',
+        sceneProjectIndex: 'Project index',
         sceneStudioKicker: 'STUDIO / PROJECT WORKSTATIONS',
         sceneStudioTitle: 'Every project has a desk',
         sceneStudioIntro: 'Rooms follow lifecycle, desks follow projects. The floor is a spatial layout, not a team, owner, or runtime claim.',
@@ -1550,6 +1593,9 @@ window.__ModuleLoader__.load({
         sceneLibraryMediaFailed: 'Project image read failed.',
         sceneLibraryExit: 'Project list',
         sceneLibraryNoMatch: 'No matching books',
+        sceneLibraryPreviousPage: 'Previous page',
+        sceneLibraryNextPage: 'Next page',
+        sceneLibraryPage: 'Page',
         contractTitle: 'Task contract',
         contractGoal: 'Goal',
         contractInput: 'Input',
@@ -2650,6 +2696,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-modebar-inner{max-width:1560px;margin:0 auto;padding:6px 24px;min-height:44px;display:flex;align-items:center;gap:14px}
 .wb-modebar-kicker{font-size:8px;line-height:1;letter-spacing:.18em;text-transform:uppercase;color:var(--dsw-alias-label-dimmed);white-space:nowrap}
 .wb-modebar-note{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.04em;color:var(--dsw-alias-label-dimmed);white-space:nowrap}
+.wb-header{position:relative;z-index:50}
+.wb-scene-settings{position:relative;flex:none;margin-left:auto;z-index:90}
+.wb-scene-settings summary{list-style:none;cursor:pointer;white-space:nowrap;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:6px 9px;color:var(--dsw-alias-label-secondary);font-size:11px}
+.wb-scene-settings summary::-webkit-details-marker{display:none}
+.wb-scene-settings summary:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.wb-scene-settings-panel{position:absolute;right:0;top:calc(100% + 8px);width:min(330px,calc(100vw - 28px));max-height:min(75vh,520px);overflow:auto;box-sizing:border-box;padding:16px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:12px;box-shadow:0 18px 48px #0008;color:var(--dsw-alias-label-primary);font-size:12px}
+.wb-scene-settings-panel p{color:var(--dsw-alias-label-secondary);line-height:1.5;margin:0 0 12px}.wb-scene-settings-panel select{width:100%;margin:6px 0 12px;padding:7px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);border-radius:6px}
+.wb-scene-settings-list{display:grid;gap:4px;margin-bottom:12px}.wb-scene-settings-row{display:flex;align-items:center;gap:5px}.wb-scene-settings-row label{flex:1;display:flex;align-items:center;gap:7px}.wb-scene-settings-row button{min-width:30px;padding:4px}.wb-scene-settings-error{color:var(--dsw-alias-state-error-primary)!important}
+.wb-scene-settings-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:760px){.wb-modebar-inner{flex-wrap:wrap}.wb-modebar-inner .wb-scene-switch.is-dock{flex:1 1 210px;width:auto}.wb-scene-settings{margin-left:auto}}
 .wb-modebar-note i{width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-state-success-primary);box-shadow:0 0 8px color-mix(in srgb,var(--dsw-alias-state-success-primary) 55%,transparent)}
 .wb-scene-switch.is-dock{flex-wrap:nowrap;gap:2px;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 76%,transparent);box-shadow:inset 0 1px rgba(255,255,255,.03)}
 .wb-scene-switch.is-dock .wb-scene-button{position:relative;border:0;border-radius:9px;padding:7px 12px;background:transparent;color:var(--dsw-alias-label-tertiary);font-size:11px;font-weight:600;line-height:1;gap:6px;transition:color .18s ease,background .18s ease,box-shadow .18s ease}
@@ -2723,7 +2779,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-studio-stage-wrap{position:relative;min-width:0;height:100%;min-height:0;overflow:hidden}
 .wb-studio-stagebar{position:absolute;z-index:6;left:auto;right:18px;top:70px;display:flex;align-items:center;gap:10px;justify-content:flex-end;min-height:26px;padding:0;color:rgba(205,225,212,.48);font-size:8px;pointer-events:none}
 .wb-studio-crumb,.wb-studio-stage-count{display:none}
-.wb-studio-stagebar .wb-studio-zoom{pointer-events:auto}
+.wb-studio-stagebar .wb-studio-zoom,.wb-studio-stagebar .wb-scene-details-toggle{pointer-events:auto}
 
 .wb-studio-stage-count{white-space:nowrap}
 .wb-studio-zoom{display:flex;align-items:center;gap:3px;flex:0 0 auto}
@@ -3021,7 +3077,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-atelier-roombar-title span{font-size:8px;letter-spacing:.12em;color:rgba(211,189,147,.6)}
 .wb-atelier-roombar-title strong{font-size:12px;font-weight:500;color:rgba(238,245,236,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wb-atelier-roombar-title small{font-size:8px;color:rgba(204,224,209,.42);white-space:nowrap}
-.wb-atelier-tabs{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.wb-atelier-tabs{display:flex;align-items:center;gap:2px;flex:0 1 auto;min-width:0;max-width:45%;overflow-x:auto}
+.wb-atelier-tabs button{flex:0 0 auto}
 .wb-atelier-tabs button{appearance:none;border:1px solid transparent;background:transparent;color:rgba(205,224,210,.48);font:inherit;font-size:8px;padding:4px 6px;cursor:pointer}
 .wb-atelier-tabs button:hover,.wb-atelier-tabs button:focus-visible{border-color:rgba(205,224,210,.3);color:#edf5eb;outline:none}
 .wb-atelier-tabs button.is-current{border-color:rgba(214,190,139,.55);background:rgba(100,78,43,.25);color:#f1dfc1}
@@ -3055,7 +3112,60 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
   .wb-atelier-roombar-title strong{font-size:10px}
   .wb-atelier-back{font-size:8px;padding:5px 6px}
 }
-@media (prefers-reduced-motion:reduce){.wb-atelier-stroller,.wb-atelier-steam{animation:none}.wb-atelier-desk,.wb-atelier-wing-floor{transition:none}}
+@media (prefers-reduced-motion:reduce){.wb-atelier-stroller,.wb-atelier-walker,.wb-atelier-steam{animation:none!important}.wb-atelier-desk,.wb-atelier-wing-floor{transition:none}}
+
+/* Office artwork is drawn from small geometric pieces; it needs no remote assets. */
+.wb-atelier-plan{background:#17252c!important}
+.wb-atelier-svg{shape-rendering:crispEdges}
+.wb-atelier-room-floor{fill:#b49872;stroke:#51483d;stroke-width:5}
+.wb-atelier-wing-floor{fill:#c5a67d;stroke:#79644f;stroke-width:3}
+.wb-atelier-wing.is-workshop .wb-atelier-wing-floor{fill:#c6b18f}
+.wb-atelier-wing.is-shared .wb-atelier-wing-floor{fill:#bda886}
+.wb-atelier-wing.is-intake .wb-atelier-wing-floor{fill:#ad9b82}
+.wb-atelier-wing:hover .wb-atelier-wing-floor,.wb-atelier-wing:focus-visible .wb-atelier-wing-floor{fill:#d8bb91;stroke:#f2d194}
+.wb-atelier-wing.has-active .wb-atelier-wing-floor{stroke:#f1d295}
+.wb-atelier-wing-wall{fill:#657f7b;stroke:#344c4b;stroke-width:3}
+.wb-atelier-wing-side{fill:#526b68;stroke:#344c4b;stroke-width:3}
+.wb-atelier-wing-bottom{stroke:#526b68;stroke-width:6}
+.wb-atelier-room-sidewall{stroke:#526b68}
+.wb-atelier-room-bottomwall{fill:#526b68;stroke:#344c4b}
+.wb-atelier-window{fill:#a9d7d2;stroke:#e2e0c9;stroke-width:2}
+.wb-atelier-corridor{fill:#a88f72;stroke:#806e59;stroke-width:2}
+.wb-atelier-corridor-line{stroke:rgba(247,226,188,.32);stroke-width:1}
+.wb-atelier-corridor-label{fill:#4c5a50;font-size:8px}
+.wb-atelier-room-rug{fill:#c6b89a;stroke:#ded2b5;stroke-width:3}
+.wb-atelier-cabin{fill:rgba(133,164,151,.27);stroke:#779189;stroke-width:2}
+.wb-atelier-glass{stroke:#d4e2cd;stroke-width:2}
+.wb-atelier-mini-table,.wb-atelier-desk-top{fill:#e4c79c;stroke:#896c53;stroke-width:2}
+.wb-atelier-mini-screen,.wb-atelier-desk-screen{fill:#405c64;stroke:#283c45;stroke-width:2}
+.wb-atelier-mini-paper,.wb-atelier-desk-paper{fill:#f7ead0}
+.wb-atelier-desk-back{fill:#8d7056;stroke:#705844;stroke-width:1}
+.wb-atelier-desk-keyboard{fill:#f4eee0;stroke:#aa9a85;stroke-width:1}
+.wb-atelier-chair{fill:#58787b;stroke:#364f53;stroke-width:2}
+.wb-atelier-desk-name{fill:#3d352d;font-size:13px;font-weight:600;letter-spacing:0;stroke:none}
+.wb-office-nameplate{fill:#f6ead2;stroke:#b69774;stroke-width:1}
+.wb-office-meeting-floor{fill:#99aca1;stroke:#708b7f;stroke-width:3}
+.wb-office-meeting-table{fill:#e2c8a0;stroke:#96775b;stroke-width:3}
+.wb-office-meeting-chair{fill:#78958c;stroke:#4b6c63;stroke-width:2}
+.wb-office-partition{fill:#e9ddc3;stroke:#8f9b87;stroke-width:3}
+.wb-office-partition-glass{fill:#b7d4c9;stroke:#e9ddc3;stroke-width:3}
+.wb-atelier-desk.is-active .wb-atelier-desk-top{fill:#f2d39a;stroke:#fff0c8;stroke-width:2.5}
+.wb-atelier-desk.is-active .wb-atelier-desk-name{fill:#493a29}
+.wb-atelier-desk:hover .wb-atelier-desk-top,.wb-atelier-desk:focus-visible .wb-atelier-desk-top{fill:#f2d6ab;stroke:#fff0c8}
+.wb-atelier-desk.is-idle .wb-atelier-desk-top{opacity:1}
+.wb-atelier-pantry-floor{fill:#9db3a0;stroke:#657d70;stroke-width:4}
+.wb-atelier-pantry-wall{fill:#647d72}
+.wb-atelier-counter,.wb-atelier-pantry-table{fill:#e1c59f;stroke:#987b5e;stroke-width:2}
+.wb-atelier-fridge{fill:#e5e9d9;stroke:#879c90;stroke-width:2}
+.wb-atelier-plant-pot{fill:#b87657;stroke:#744a3c;stroke-width:2}
+.wb-atelier-plant-leaf{fill:#629576;stroke:#3d715c;stroke-width:2}
+.wb-office-pixel{shape-rendering:crispEdges;pointer-events:none}
+.wb-office-step-b{opacity:0}
+.wb-office-pixel.is-walking .wb-office-step-a{animation:wbOfficeStepA .65s steps(1,end) infinite}
+.wb-office-pixel.is-walking .wb-office-step-b{animation:wbOfficeStepB .65s steps(1,end) infinite}
+@keyframes wbOfficeStepA{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes wbOfficeStepB{0%,49%{opacity:0}50%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.wb-office-step-a,.wb-office-step-b{animation:none!important}.wb-office-step-a{opacity:1}.wb-office-step-b{opacity:0}}
 
 @media (max-width:1100px){.wb-earth-scenes .wb-scene-label{display:none}.wb-earth-scenes .wb-scene-button{padding:4px 7px}.wb-earth-scenes{flex:0 1 auto}}
 @media (max-width:980px){.wb-earth-scenes .wb-scene-button:disabled{display:none}.wb-earth-scenes{gap:3px}.wb-earth-scenes .wb-scene-button{font-size:8px}.wb-library-scenes .wb-scene-button:disabled{display:none}}
@@ -3083,6 +3193,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-llib-exit{display:flex;align-items:center;gap:5px;height:30px;padding:0 9px;border:1px solid rgba(212,188,151,.18);border-radius:5px;background:none;color:rgba(226,209,184,.66);font-size:8px;cursor:pointer}
 .wb-llib-scenes{position:absolute;right:22px;top:49px;z-index:4}
 .wb-llib-body{position:absolute;inset:88px 0 0;display:grid;grid-template-columns:minmax(0,1fr) 272px;min-height:0}
+.wb-llib.is-inspector-collapsed .wb-llib-body{grid-template-columns:minmax(0,1fr)}
+.wb-studio.is-inspector-collapsed .wb-studio-body{grid-template-columns:minmax(0,1fr)}
+.wb-llib.is-inspector-collapsed .wb-llib-inspector,.wb-studio.is-inspector-collapsed .wb-studio-inspector{display:none}
+.wb-scene-details-toggle{appearance:none;flex:none;border:1px solid rgba(212,205,186,.3);border-radius:5px;background:rgba(17,20,17,.8);color:#e9e5d9;font:inherit;font-size:11px;line-height:1.3;padding:5px 8px;cursor:pointer;white-space:nowrap}
+.wb-scene-details-toggle:hover,.wb-scene-details-toggle:focus-visible{border-color:#d6ccb0;color:#fff}
+.wb-llib-project-index{display:flex;align-items:center;gap:4px;overflow-x:auto;flex:none;padding:8px 0 2px;scrollbar-width:thin}
+.wb-llib-project-index>span{flex:none;color:#d4c5af;font-size:11px;padding-right:6px}
+.wb-llib-project-index button{flex:none;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(212,188,151,.2);border-radius:4px;background:rgba(32,24,17,.7);color:#e7ddcc;padding:5px 8px;font:inherit;font-size:11px;cursor:pointer}
+.wb-llib-project-index button[aria-pressed=true]{background:#e3d2b4;color:#282015;border-color:#e3d2b4}
+.wb-llib-project-index button:focus-visible{outline:2px solid #f2dfb9;outline-offset:1px}
 .wb-llib-stage-wrap{display:flex;flex-direction:column;min-width:0;min-height:0;padding:0 12px 12px 18px}
 .wb-llib-stagebar{display:flex;align-items:center;gap:12px;height:38px;flex:none;border-bottom:1px solid rgba(205,181,144,.12)}
 .wb-llib-crumb{display:flex;align-items:center;gap:7px;font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,179,148,.45);white-space:nowrap}
@@ -3113,6 +3233,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-llib-shelf-label{fill:rgba(231,213,186,.72);font-size:7px;letter-spacing:.04em}
 .wb-llib-shelf-count{fill:rgba(226,204,170,.48);font-size:7px}
 .wb-llib-shelf-board{stroke:rgba(198,158,105,.35);stroke-width:2}
+.wb-llib-page-button{cursor:pointer;outline:none}
+.wb-llib-page-button rect{fill:rgba(20,14,9,.8);stroke:rgba(219,188,142,.35)}
+.wb-llib-page-button text,.wb-llib-page-count{fill:rgba(231,213,186,.85);font-size:9px}
+.wb-llib-page-button:hover rect,.wb-llib-page-button:focus-visible rect{stroke:#f2d4a5;stroke-width:1.5}
+.wb-llib-page-button[aria-disabled="true"]{opacity:.35;cursor:default}
 .wb-llib-book{cursor:pointer;outline:none}
 .wb-llib-book-hit{pointer-events:all}
 .wb-llib-spine{stroke:rgba(24,16,9,.55);stroke-width:.7;transition:filter .15s ease}
@@ -3185,8 +3310,52 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-llib-inspector-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;text-align:center;color:rgba(215,193,161,.45)}
 .wb-llib-inspector-empty b{font-size:11px;font-weight:500;color:rgba(235,217,188,.7)}
 .wb-llib-inspector-empty p{font-size:8px;line-height:1.5;max-width:170px}
+/* The library uses a separate, warm architectural palette and scene layers. */
+.wb-llib-floor{stroke:#75634d;stroke-width:5}
+.wb-llib-wall{fill:#7a8a7e;stroke:#50685e;stroke-width:4}
+.wb-llib-window{stroke:#d6e8da;stroke-width:5;opacity:.9}
+.wb-llib-arch{stroke:#efe4c9;stroke-width:3}
+.wb-llib-arch-inner{stroke:#b9d4c8;stroke-width:2}
+.wb-llib-light{fill:rgba(255,238,185,.1)}
+.wb-llib-rug{fill:#6e8a7d;stroke:#d8cfb4;stroke-width:5}
+.wb-llib-wall-base{stroke:#cfb896;stroke-width:4}
+.wb-llib-shelf-shadow{fill:rgba(47,37,26,.28)}
+.wb-llib-shelf-case{fill:#906c4c;stroke:#604b38;stroke-width:3}
+.wb-llib-shelf-back{fill:#5e4c3e}
+.wb-llib-shelf-wood{stroke:#ddbd90;stroke-width:3}
+.wb-llib-shelf-plaque{fill:#ebd5af;stroke:#a28563;stroke-width:1}
+.wb-llib-shelf-code{fill:#615040;font-size:11px;letter-spacing:0}
+.wb-llib-shelf-label{fill:#4a3d31;font-size:11px;font-weight:600;letter-spacing:0}
+.wb-llib-shelf-count{fill:#594b3d;font-size:10px;font-weight:600}
+.wb-llib-shelf-board{stroke:#b7946d;stroke-width:4}
+.wb-llib-shelf-edge{fill:#71533b;stroke:#4e3e31;stroke-width:1}
+.wb-llib-shelf-top{fill:#c39d73;stroke:#775b43;stroke-width:1}
+.wb-llib-book.is-persistent .wb-llib-spine{fill:#c88d55}
+.wb-llib-book.is-incubating .wb-llib-spine{fill:#8cad83}
+.wb-llib-book.is-temporary .wb-llib-spine{fill:#8ba9ad}
+.wb-llib-book.is-unclassified .wb-llib-spine{fill:#b0a296}
+.wb-llib-spine-band{stroke:rgba(255,240,213,.65);stroke-width:1}
+.wb-llib-spine-name{fill:#26382e;font-size:8px;font-weight:600;pointer-events:none}
+.wb-llib-page-button rect{fill:#eedfbe;stroke:#8f765a;stroke-width:1}
+.wb-llib-page-button text,.wb-llib-page-count{fill:#473c30;font-size:12px;font-weight:600}
+.wb-llib-page-button:hover rect,.wb-llib-page-button:focus-visible rect{stroke:#466a59;stroke-width:2}
+.wb-llib-catalog-case{fill:#9c7653;stroke:#6a503c;stroke-width:3}
+.wb-llib-catalog-title{fill:#f6e8ce;font-size:10px;letter-spacing:.04em}
+.wb-llib-drawer{fill:#c8a77c;stroke:#87694e;stroke-width:1}
+.wb-llib-drawer-label{fill:#5b4938;font-size:6px}
+.wb-llib-table-top{fill:#ae8864;stroke:#72553d;stroke-width:3}
+.wb-llib-table-leather{fill:#58786b;stroke:#b8c6a6;stroke-width:2}
+.wb-llib-table-grain{stroke:rgba(255,238,207,.32);stroke-width:2}
+.wb-llib-open-page{fill:#f9efd7;stroke:#b89e7b;stroke-width:1}
+.wb-llib-open-lines{stroke:#b2a182;stroke-width:1}
+.wb-llib-title-on-table{fill:#f9edcf;font-size:14px;font-weight:600;letter-spacing:.02em}
+.wb-llib-seat{fill:#b48b66;stroke:#72563f;stroke-width:3}
+.wb-llib-seat-cushion{fill:#c7a885;stroke:#e2cbac;stroke-width:1}
+.wb-llib-window-glow{fill:#f7e6b7;opacity:.18;pointer-events:none;animation:wbLibraryLight 7s ease-in-out infinite}
+.wb-llib-floor-note{fill:#554b3e;font-size:7px;letter-spacing:0}
+@keyframes wbLibraryLight{0%,100%{opacity:.14}50%{opacity:.23}}
 @keyframes wbLibSteam{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:.5;transform:translateY(-3px)}}
-@media (prefers-reduced-motion:reduce){.wb-llib-steam{animation:none}}
+@media (prefers-reduced-motion:reduce){.wb-llib-steam,.wb-llib-window-glow{animation:none}}
 @media (max-width:1100px){.wb-llib-body{grid-template-columns:minmax(0,1fr) 250px}.wb-llib-brand p{max-width:400px}}
 @media (max-width:980px){
   .wb-root.is-library-scene .wb-library{height:auto;min-height:0;padding-bottom:10px}
@@ -3210,6 +3379,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
   .wb-llib-top{padding:10px 10px 0}
   .wb-llib-scenes{margin:8px 10px 0}
 }
+/* Preserve the scene's width instead of shrinking it to the available height.
+   Small windows scroll the scene, leaving the text index and tools available. */
+.wb-llib-stage{display:block;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;min-height:0}
+.wb-llib-stage:focus-visible{outline:2px solid #d7be92;outline-offset:-2px}
+.wb-llib-svg{display:block;flex:none;width:100%;height:auto;max-height:none;min-width:720px;aspect-ratio:1040/600}
 
 
 .wb-time{position:relative;height:calc(100vh - 380px);min-height:520px;max-height:760px;overflow:hidden;color:#eee7d9;background:radial-gradient(900px 560px at 72% 43%,rgba(175,144,93,.1),transparent 66%),linear-gradient(145deg,#0c1210 0%,#11130f 52%,#0c0d0b 100%)}
@@ -4419,6 +4593,18 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 @media (max-width:460px){.wb-room.wb-field .wb-room-open span{display:none}.wb-room.wb-field .wb-room-open{padding:0 8px}}
 @media (prefers-reduced-motion:reduce){.wb-room.wb-field,.wb-room.wb-field .wb-field-copy,.wb-room.wb-field .wb-field-media img,.wb-room.wb-field .wb-ws-pane{animation:none!important}}
 
+/* A quiet visual trace of the scene the user is returning to. */
+.wb-room.wb-field.is-origin-earth{--wb-origin-color:#93c8d1}
+.wb-room.wb-field.is-origin-studio{--wb-origin-color:#a9c8ac}
+.wb-room.wb-field.is-origin-library{--wb-origin-color:#dbc199}
+.wb-room.wb-field .wb-field-origin{position:absolute;z-index:2;right:3%;top:7%;width:clamp(130px,20vw,240px);height:auto;color:var(--wb-origin-color);pointer-events:none;opacity:.62;animation:wbOriginArrive .65s var(--wb-ease-out) both}
+.wb-room.wb-field .wb-field-hero:not(.is-empty) .wb-field-origin{opacity:.38}
+.wb-room.wb-field .wb-field-origin line,.wb-room.wb-field .wb-field-origin path,.wb-room.wb-field .wb-field-origin rect,.wb-room.wb-field .wb-field-origin circle,.wb-room.wb-field .wb-field-origin ellipse{vector-effect:non-scaling-stroke}
+.wb-room.wb-field .wb-field-index.is-origin{color:var(--wb-origin-color);opacity:.9}
+@keyframes wbOriginArrive{from{opacity:0;transform:scale(1.08)}to{transform:scale(1)}}
+@media(max-width:760px){.wb-room.wb-field .wb-field-origin{width:130px;right:3%;top:5%;opacity:.3}}
+@media(prefers-reduced-motion:reduce){.wb-room.wb-field .wb-field-origin{animation:none!important}}
+
 `
 
     function StatusPill({ status, tr }) {
@@ -4705,6 +4891,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       return { eye: point.map((value) => value * (1 + altitude)), target: point }
     }
 
+    // Fade in the actual daytime imagery near the surface, so unlit terrain
+    // remains legible at night without changing the solar terminator.
+    function earthTerrainAssist(eye) {
+      const distance = Math.hypot(...eye)
+      const progress = Math.max(0, Math.min(1, (3 - distance) / (3 - 1.72)))
+      return 0.68 * progress * progress * (3 - 2 * progress)
+    }
+
     function earthCompile(gl, type, source) {
       const shader = gl.createShader(type)
       gl.shaderSource(shader, source)
@@ -4862,6 +5056,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         data?.pinnedMissing ? h('p', { className: 'wb-anchor-warning' }, tr('earthMediaPinnedMissing')) : null)
     }
 
+    // Older overrides may only store a path (or folder -1). In that case the
+    // server resolves the first matching image; highlight that one only.
+    function mediaMatchesRepresentative(pinned, item, resolved) {
+      if (!pinned || !item || pinned.path !== item.path) return false
+      if (Number.isInteger(pinned.folder) && pinned.folder >= 0) return pinned.folder === item.folder
+      return Boolean(resolved && resolved.path === item.path && resolved.folder === item.folder)
+    }
+
     function ProjectMediaPicker({ project, tr, onClose, onApply }) {
       const media = useProjectMedia(project.id, project.representativeImage?.path || '')
       const [manual, setManual] = useState('')
@@ -4908,7 +5110,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             media.status === 'loading' ? tr('earthMediaLoading') : scan ? tr('earthMediaScanMeta', { roots: scan.roots, images: scan.images }) : '',
             project.representativeImage ? h('button', { type: 'button', className: 'wb-btn ghost', disabled: busy, onClick: () => apply(null) }, tr('earthMediaClear')) : null),
           items.length ? h('div', { className: 'wb-media-grid' }, items.map((item) => {
-            const pinned = project.representativeImage?.path === item.path
+            const pinned = mediaMatchesRepresentative(project.representativeImage, item, media.data?.representative)
             return h('button', {
               key: item.folder + ':' + item.path, type: 'button', className: cx('wb-media-cell', pinned && 'is-pinned'), disabled: busy,
               onClick: () => apply(item), title: item.path,
@@ -4929,21 +5131,216 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('button', { type: 'button', className: 'wb-btn ghost', onClick: onClose }, tr('earthMediaCancel')))))
     }
 
-    // Only fully mounted scenes enter the switch. Design candidates live in
-    // SCENE-SYSTEM.md until they have a real data contract, a distinct entry
-    // transition and a verified return state; this is not a theme menu.
+    // Trusted, source-controlled scene definitions. A contributor can add an
+    // entry here and implement its component; this is not a runtime plugin API.
+    // Each binding receives shared project actions plus owned scene state.
     const SCENE_REGISTRY = [
-      { id: 'earth', labelKey: 'sceneEarth', icon: 'globe' },
-      { id: 'studio', labelKey: 'sceneStudio', icon: 'grid' },
-      { id: 'library', labelKey: 'sceneLibrary', icon: 'library' },
-      { id: 'time', labelKey: 'sceneTime', icon: 'clock' },
+      { id: 'earth', labelKey: 'sceneEarth', backLabelKey: 'sceneBackEarth', icon: 'globe', component: EarthView,
+        bind: ({ common }) => common },
+      { id: 'studio', labelKey: 'sceneStudio', backLabelKey: 'sceneStudioBackStudio', icon: 'grid', component: StudioView,
+        bind: ({ common, studio }) => ({ ...common, ...studio }) },
+      { id: 'library', labelKey: 'sceneLibrary', backLabelKey: 'sceneBackLibrary', icon: 'library', component: LibraryView,
+        bind: ({ common, library }) => ({ ...common, ...library }) },
+      { id: 'time', labelKey: 'sceneTime', backLabelKey: 'sceneBackTime', icon: 'clock', component: TimeView,
+        bind: ({ common, time }) => ({ ...common, ...time }) },
     ]
 
-    function SceneSwitch({ current, onScene, tr, variant = 'default' }) {
+    // Only a small, validated JSON preference is stored here. It never loads
+    // code, project data, files or scene implementations from storage.
+    const SCENE_PREFERENCES_KEY = 'dsh-project-atlas.scene-preferences.v1'
+    function normalizeScenePreferences(value, registry = SCENE_REGISTRY) {
+      const ids = registry.map((item) => item.id)
+      const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+      const order = []
+      for (const id of Array.isArray(input.order) ? input.order : []) {
+        if (ids.includes(id) && !order.includes(id)) order.push(id)
+      }
+      for (const id of ids) if (!order.includes(id)) order.push(id)
+      let hidden = Array.isArray(input.hidden) ? [...new Set(input.hidden.filter((id) => ids.includes(id)))] : []
+      if (hidden.length >= ids.length) hidden = []
+      const visible = order.filter((id) => !hidden.includes(id))
+      const start = visible.includes(input.start) ? input.start : visible[0]
+      return { order, hidden, start }
+    }
+
+    function readScenePreferences(storage, registry = SCENE_REGISTRY) {
+      try { return normalizeScenePreferences(JSON.parse(storage?.getItem(SCENE_PREFERENCES_KEY) || 'null'), registry) }
+      catch { return normalizeScenePreferences(null, registry) }
+    }
+
+    function writeScenePreferences(storage, value, registry = SCENE_REGISTRY) {
+      try {
+        if (!storage) return false
+        storage.setItem(SCENE_PREFERENCES_KEY, JSON.stringify(normalizeScenePreferences(value, registry)))
+        return true
+      } catch { return false }
+    }
+
+    function sceneStorage() {
+      try { return window.localStorage } catch { return null }
+    }
+
+    function SceneSettings({ value, onChange, tr, storageError }) {
+      const visibleCount = value.order.length - value.hidden.length
+      const move = (id, delta) => {
+        const order = [...value.order]
+        const index = order.indexOf(id), next = index + delta
+        if (index < 0 || next < 0 || next >= order.length) return
+        ;[order[index], order[next]] = [order[next], order[index]]
+        onChange({ ...value, order })
+      }
+      return h('details', { className: 'wb-scene-settings' },
+        h('summary', null, tr('sceneSettings')),
+        h('div', { className: 'wb-scene-settings-panel' },
+          h('p', null, tr('sceneSettingsHint')),
+          h('label', null, tr('sceneSettingsStart'),
+            h('select', { value: value.start, 'aria-label': tr('sceneSettingsStart'), onChange: (event) => onChange({ ...value, start: event.target.value }) },
+              value.order.filter((id) => !value.hidden.includes(id)).map((id) => h('option', { key: id, value: id }, tr(findScene(id).labelKey))))),
+          h('div', { className: 'wb-scene-settings-list' }, value.order.map((id, index) => {
+            const scene = findScene(id), name = tr(scene.labelKey), hidden = value.hidden.includes(id)
+            return h('div', { key: id, className: 'wb-scene-settings-row' },
+              h('label', null, h('input', { type: 'checkbox', 'aria-label': tr('sceneSettingsShow', { name }), checked: !hidden, disabled: !hidden && visibleCount === 1,
+                onChange: (event) => onChange({ ...value, hidden: event.target.checked ? value.hidden.filter((item) => item !== id) : [...value.hidden, id] }) }), name),
+              h('button', { type: 'button', className: 'wb-btn', disabled: index === 0, 'aria-label': tr('sceneSettingsUp', { name }), title: tr('sceneSettingsUp', { name }), onClick: () => move(id, -1) }, h('span', { 'aria-hidden': 'true' }, '↑'), h('span', { className: 'wb-scene-settings-sr' }, tr('sceneSettingsUp', { name }))),
+              h('button', { type: 'button', className: 'wb-btn', disabled: index === value.order.length - 1, 'aria-label': tr('sceneSettingsDown', { name }), title: tr('sceneSettingsDown', { name }), onClick: () => move(id, 1) }, h('span', { 'aria-hidden': 'true' }, '↓'), h('span', { className: 'wb-scene-settings-sr' }, tr('sceneSettingsDown', { name }))))
+          })),
+          h('button', { type: 'button', className: 'wb-btn', onClick: () => onChange(null) }, tr('sceneSettingsReset')),
+          storageError ? h('p', { role: 'status', className: 'wb-scene-settings-error' }, tr('sceneSettingsStorageError')) : null))
+    }
+
+    function findScene(id, registry = SCENE_REGISTRY) {
+      return registry.find((item) => item.id === id) || null
+    }
+
+    function canNavigateToView(id) {
+      return id === 'table' || Boolean(findScene(id))
+    }
+
+    function projectHistoryState(state, next, current) {
+      const previousEntry = state?.dshWorkbench?.entry
+      return { ...(state || {}), dshWorkbench: { projectId: next.projectId, tab: next.tab, entry: current.name === 'index' ? 'wall' : (previousEntry || 'direct') } }
+    }
+
+    function workspaceSaveSnapshot({ id, note, tags, status, pinned, hidden }) {
+      return JSON.stringify([id, note, tags, status, pinned, hidden])
+    }
+
+    function workspaceSaveIsCurrent(savedSnapshot, current) {
+      return savedSnapshot !== null && savedSnapshot === workspaceSaveSnapshot(current)
+    }
+
+    async function attemptWorkspaceLeave(ref, dirty, save, onClose) {
+      if (ref.current) return false
+      ref.current = true
+      try {
+        if (dirty && !(await save())) { ref.current = false; return false }
+        onClose()
+        return true
+      } catch { ref.current = false; return false }
+    }
+
+    async function savePendingWorkspaceChanges({ taskDirty, confirmDiscard, dirty, save, intentDirty, saveLifecycle, unchanged = () => true }) {
+      if (taskDirty && !confirmDiscard()) return false
+      if (dirty && !(await save())) return false
+      if (intentDirty && !(await saveLifecycle())) return false
+      return unchanged()
+    }
+
+    async function guardProjectSwitch(ref, guard, confirm, proceed) {
+      if (ref.current) return false
+      ref.current = true
+      try {
+        if (guard?.dirty && (!confirm() || !(await guard.save()))) return false
+        proceed()
+        return true
+      } catch { return false } finally { ref.current = false }
+    }
+
+    function handleWorkspaceEscape(event, { taskOpen, setTaskOpen, leave }, doc = document) {
+      if (event.key !== 'Escape') return false
+      if (doc.querySelector('[role="dialog"][aria-modal="true"]')) return true
+      if (taskOpen) { event.preventDefault(); setTaskOpen(false); return true }
+      const target = event.target
+      if (target && target.closest && target.closest('input,textarea,select,[contenteditable="true"]')) return true
+      event.preventDefault()
+      leave()
+      return true
+    }
+
+    // Browser history has already moved by popstate. Restore the current entry
+    // first, then replay the requested jump only after confirmation and save.
+    function createProjectPopGuard({ history, getCurrent, getGuard, confirm, apply }) {
+      let pending = null
+      return async (state) => {
+        const current = getCurrent()
+        const target = state?.wbAtlasHistory
+        if (pending?.phase === 'restoring') {
+          if (target?.session !== pending.session) return
+          if (target.index !== pending.origin) { history.go(pending.origin - target.index); return }
+          pending.phase = 'checking'
+          const accepted = confirm()
+          let saved = false
+          if (accepted) {
+            try { saved = await pending.save() } catch { saved = false }
+          }
+          if (!saved) { pending = null; return }
+          pending.phase = 'replaying'
+          history.go(pending.target - pending.origin)
+          return
+        }
+        if (pending?.phase === 'checking') {
+          if (target?.session === pending.session && target.index !== pending.origin) history.go(pending.origin - target.index)
+          return
+        }
+        if (pending?.phase === 'replaying') {
+          if (target?.session !== pending.session || target.index !== pending.target) return
+          pending = null
+          apply(state)
+          return
+        }
+        if (pending?.phase === 'replaying-unknown') {
+          pending = null
+          apply(state)
+          return
+        }
+        const guard = getGuard()
+        const leaving = current.route?.name === 'project' && state?.dshWorkbench?.projectId !== current.route.projectId
+        if (!guard?.dirty || !leaving) { apply(state); return }
+        const origin = current.state?.wbAtlasHistory
+        if (origin && target?.session === origin.session && Number.isInteger(target.index) && target.index !== origin.index) {
+          pending = { phase: 'restoring', session: origin.session, origin: origin.index, target: target.index, save: guard.save }
+          history.go(origin.index - target.index)
+          return
+        }
+        // An entry not created by this workbench has no known direction. Restore
+        // a same-URL copy rather than risking silent data loss; forward history
+        // may be discarded for this uncommon interleaved-history case.
+        try { history.pushState(current.state, '', current.url) } catch { return }
+        if (!confirm()) return
+        let saved = false
+        try { saved = await guard.save() } catch { saved = false }
+        if (saved) { pending = { phase: 'replaying-unknown' }; history.back() }
+      }
+    }
+
+    function sceneModeFor(route, tab, scene) {
+      return route.name === 'index' && tab === 'projects' && Boolean(scene)
+    }
+
+    function sceneBackLabel(id, fromEarthLanding, registry = SCENE_REGISTRY) {
+      if (id === 'earth' && fromEarthLanding) return 'roomBackDetail'
+      return findScene(id, registry)?.backLabelKey || 'sceneBackEarth'
+    }
+
+    function renderScene(scene, context) {
+      return h(scene.component, scene.bind(context))
+    }
+
+    function SceneSwitch({ current, onScene, tr, variant = 'default', scenes = SCENE_REGISTRY }) {
       return h('div', {
         className: cx('wb-scene-switch', `is-${variant}`),
         role: 'group', 'aria-label': tr('earthSceneSwitch'),
-      }, SCENE_REGISTRY.map((item) => {
+      }, scenes.map((item) => {
         const label = tr(item.labelKey)
         return h('button', {
           key: item.id, type: 'button',
@@ -4990,10 +5387,6 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       indexQueryRef.current = indexQuery
       const [indexPreviewId, setIndexPreviewId] = useState('')
       const [flight, setFlight] = useState(null)
-      const [entering, setEntering] = useState(false)
-      const [arrival, setArrival] = useState(null)
-      const enteringRef = useRef(false)
-      enteringRef.current = entering
       const [landing, setLanding] = useState(null)
       const landingRef = useRef(null)
       const returnToOrbitRef = useRef(null)
@@ -5105,7 +5498,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         let textures = null
         const shader = {
           vertex: `attribute vec3 aPos; attribute vec2 aUv; attribute vec3 aNormal; uniform mat4 uProj; uniform mat4 uView; varying vec2 vUv; varying vec3 vWorld; varying vec3 vNormal; void main(){ vec4 world = vec4(aPos, 1.0); gl_Position = uProj * uView * world; vUv = aUv; vWorld = world.xyz; vNormal = aNormal; }`,
-          fragment: `precision highp float; varying vec2 vUv; varying vec3 vWorld; varying vec3 vNormal; uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uBump; uniform vec3 uSun; uniform vec3 uCamera; void main(){ vec3 n = normalize(vNormal); vec3 viewDir = normalize(uCamera - vWorld); float light = dot(n, normalize(uSun)); float day = smoothstep(-0.12, 0.22, light); vec3 dayColor = texture2D(uDay, vUv).rgb; vec3 nightColor = texture2D(uNight, vUv).rgb; float relief = texture2D(uBump, vUv).r; dayColor *= 0.86 + relief * 0.22; vec3 color = mix(nightColor * 0.72, dayColor, day); float twilight = smoothstep(-0.20, 0.0, light) * (1.0 - smoothstep(0.0, 0.28, light)); color += vec3(0.34, 0.18, 0.08) * twilight * 0.22; float rim = pow(1.0 - max(dot(n, viewDir), 0.0), 2.4); color += vec3(0.09, 0.22, 0.30) * rim * 0.52; gl_FragColor = vec4(color, 1.0); }`,
+          fragment: `precision highp float; varying vec2 vUv; varying vec3 vWorld; varying vec3 vNormal; uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uBump; uniform vec3 uSun; uniform vec3 uCamera; uniform float uTerrainAssist; void main(){ vec3 n = normalize(vNormal); vec3 viewDir = normalize(uCamera - vWorld); float light = dot(n, normalize(uSun)); float day = smoothstep(-0.12, 0.22, light); vec3 dayColor = texture2D(uDay, vUv).rgb; vec3 nightColor = texture2D(uNight, vUv).rgb; float relief = texture2D(uBump, vUv).r; dayColor *= 0.86 + relief * 0.22; vec3 nightTerrain = mix(nightColor * 0.72, dayColor * vec3(0.70, 0.78, 0.90), uTerrainAssist); vec3 color = mix(nightTerrain, dayColor, day); float twilight = smoothstep(-0.20, 0.0, light) * (1.0 - smoothstep(0.0, 0.28, light)); color += vec3(0.34, 0.18, 0.08) * twilight * 0.22; float rim = pow(1.0 - max(dot(n, viewDir), 0.0), 2.4); color += vec3(0.09, 0.22, 0.30) * rim * 0.52; gl_FragColor = vec4(color, 1.0); }`,
         }
         const resize = () => {
           if (!gl || dead) return
@@ -5213,39 +5606,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                   s.flightCamera = null
                   s.flight = null
                   if (f.type === 'in') {
-                    // Marker clicks settle on a content-rich landing card so the
-                    // project opens only after the user chooses. A quick index
-                    // entry is still a spatial move, then hands off to the project.
+                    // Every route stops at the same inspectable landing. Opening
+                    // the project is a separate, explicit user action.
                     s.cameraOverride = f.toCamera || s.cameraOverride
                     s.flightCamera = null
                     setFlight(null)
-                    if (f.autoEnter) {
-                      // Remember the orbit the user left from, so returning from
-                      // the project restores the same globe view instead of a reset.
-                      try {
-                        sessionStorage.setItem(EARTH_RETURN_KEY, JSON.stringify({
-                          mode: 'orbit',
-                          yaw: f.returnTo?.yaw,
-                          pitch: f.returnTo?.pitch,
-                          distance: f.returnTo?.distance,
-                          query: indexQueryRef.current,
-                          at: Date.now(),
-                        }))
-                      } catch { /* storage is optional */ }
-                      enteringRef.current = true
-                      setEntering(true)
-                      const touchdownMs = earthReduced() ? 0 : 900
-                      if (touchdownMs) setArrival({ project: f.project, at: Date.now() })
-                      onActive('')
-                      window.setTimeout(() => {
-                        if (!dead) {
-                          setArrival(null)
-                          onOpen(f.project, 'overview')
-                          onActive('')
-                        }
-                      }, touchdownMs)
-                      return
-                    }
                     setLanding({ project: f.project, returnTo: f.returnTo, at: Date.now() })
                     onActive(f.project.id)
                   } else {
@@ -5289,6 +5654,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               const sun = earthSunVector()
               gl.uniform3fv(gl.getUniformLocation(program, 'uSun'), sun)
               gl.uniform3fv(gl.getUniformLocation(program, 'uCamera'), eye)
+              gl.uniform1f(gl.getUniformLocation(program, 'uTerrainAssist'), earthTerrainAssist(eye))
               gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index)
               gl.drawElements(gl.TRIANGLES, sphere.indices.length, gl.UNSIGNED_SHORT, 0)
               s.camera = { eye, target: camera.target, view, projection, width, height }
@@ -5461,19 +5827,21 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         } catch (error) { return { ok: false, error: error?.message || String(error) } }
       }
 
-      const startFlight = (project, options = {}) => {
+      const startFlight = (project) => {
         if (!project) return
         const s = stateRef.current
-        if (s.flight || enteringRef.current || landingRef.current) return
+        if (s.flight || landingRef.current) return
         const model = models.find((item) => item.id === project.id)
         if (!model) return
         setIndexOpen(false)
+        // Panorama deliberately hides the inspector; leave it before landing
+        // so that project information and the explicit entry remain available.
+        setPanorama(false)
         const returnTo = { yaw: s.yaw, pitch: s.pitch, distance: s.distance }
         s.cameraOverride = null
         s.flightCamera = null
         s.flight = {
           type: 'in', project, t: 0, duration: earthReduced() ? 0.01 : 1.35,
-          autoEnter: Boolean(options.autoEnter),
           fromCamera: {
             eye: s.camera?.eye || earthOrbitEye(s),
             target: s.camera?.target || [0, 0, 0],
@@ -5484,7 +5852,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         s.playing = false
         setPlaying(false)
         onActive(project.id)
-        setFlight({ phase: 'flying', project, returnTo, autoEnter: Boolean(options.autoEnter) })
+        setFlight({ phase: 'flying', project, returnTo })
       }
 
       const enterProjectFromLanding = (tab) => {
@@ -5569,7 +5937,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const showIndex = () => {
-        if (flight || enteringRef.current) return
+        if (flight) return
         if (landingRef.current) { setIndexOpen(true); returnToOrbit(); return }
         if (activeId) {
           onActive('')
@@ -5581,22 +5949,13 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 
       const enterFromIndex = (model) => {
         if (!model?.project) return
-        if (flight || enteringRef.current || landingRef.current) return
-        // A quick index entry is still a spatial move: fly to the project's
-        // marker first, then hand off to the project when the camera lands.
-        if (!models.some((item) => item.id === model.project.id)) {
-          onOpen(model.project, 'overview')
-          onActive('')
-          return
-        }
-        startFlight(model.project, { autoEnter: true })
+        if (flight || landingRef.current) return
+        // Index and globe markers both stop at the inspectable project landing.
+        if (!models.some((item) => item.id === model.project.id)) return
+        startFlight(model.project)
       }
 
       const openMarker = (project) => {
-        if (panorama) {
-          startFlight(project, { autoEnter: true })
-          return
-        }
         startFlight(project)
       }
 
@@ -5668,8 +6027,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h(ProjectDeck, { items: projects, activeId, onActive, onSelect: onOpen, tr }))
       }
 
-      return h('div', { className: cx('wb-earth', 'wb-scene-enter', panorama && 'is-panorama', indexVisible && !panorama && 'is-index-open', (flight || entering) && 'is-flight', arrival && 'is-touchdown', landing && 'is-landing') },
-        h('div', { ref: stageRef, className: cx('wb-earth-stage', panorama && 'is-panorama', active && 'is-active', (flight || entering) && 'is-flight', arrival && 'is-touchdown', landing && 'is-landing'), onDoubleClick: handleStageDoubleClick },
+      return h('div', { className: cx('wb-earth', 'wb-scene-enter', panorama && 'is-panorama', indexVisible && !panorama && 'is-index-open', flight && 'is-flight', landing && 'is-landing') },
+        h('div', { ref: stageRef, className: cx('wb-earth-stage', panorama && 'is-panorama', active && 'is-active', flight && 'is-flight', landing && 'is-landing'), onDoubleClick: handleStageDoubleClick },
           h('div', { className: 'wb-earth-stars', 'aria-hidden': true }),
           h('canvas', {
             ref: canvasRef, className: 'wb-earth-canvas', role: 'img',
@@ -5679,7 +6038,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h('div', { className: 'wb-earth-markers', 'aria-hidden': false },
             models.map((model) => h('button', {
               key: model.id, type: 'button', ref: (node) => { if (node) markerNodes.current[model.id] = node; else delete markerNodes.current[model.id] },
-              className: cx('wb-earth-marker', model.id === activeId && 'is-active', model.id === indexPreviewId && 'is-preview', arrival?.project?.id === model.id && 'is-arrival'),
+              className: cx('wb-earth-marker', model.id === activeId && 'is-active', model.id === indexPreviewId && 'is-preview'),
               style: { opacity: 0 }, title: `${model.project.displayName || model.project.name} · ${tr('earthLayoutNote')}`,
               'data-project-id': model.id, 'aria-label': `${model.project.displayName || model.project.name} · ${tr('earthOpenHint')}`,
               onClick: () => openMarker(model.project),
@@ -5794,14 +6153,10 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('button', { type: 'button', onClick: () => zoomBy(-0.28), 'aria-label': tr('earthZoomIn') }, '+')),
           h('div', { className: 'wb-earth-bottom' },
             h('span', null, h('i', { className: 'wb-earth-live-dot' }), tr('earthDayNight')),
+            isLanding ? h('span', null, tr('earthTerrainAssist')) : null,
             h('span', null, tr('earthDragHint')),
             h('span', { className: 'wb-earth-focus-hint' }, tr('earthFocusHint'))),
           flight?.phase === 'flying' ? h('div', { className: 'wb-earth-flight' }, h('span', { className: 'wb-earth-flight-dot' }), tr('earthFlying', { name: flight.project.displayName || flight.project.name })) : null,
-          arrival ? h('div', { className: 'wb-earth-touchdown', role: 'status', 'aria-live': 'polite' },
-            h('span', { className: 'wb-earth-touchdown-kicker' }, tr('earthTouchdownKicker')),
-            h('b', null, tr('earthTouchdownEnter', { name: arrival.project.displayName || arrival.project.name })),
-            h('span', { className: 'wb-earth-touchdown-hint' }, tr('earthTouchdownHint')),
-            h('i', { className: 'wb-earth-touchdown-progress', 'aria-hidden': 'true' })) : null,
           panorama ? h('button', { type: 'button', className: 'wb-earth-restore', onClick: () => setPanorama(false) }, tr('earthExitPanorama'), ' ⤡') : null),
         h('div', { className: 'wb-earth-credit' }, tr('earthCredit')))
     }
@@ -6066,20 +6421,32 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       return Math.abs(value)
     }
 
-    function libraryShelf({ code, label, items, activeId, onSelect, onOpen, tr, x, y, width, height, rows }) {
+    const LIBRARY_PAGE_SIZE = 10
+    const libraryGroupId = (project) => ['persistent', 'incubating', 'temporary'].includes(project.lifecycle) ? project.lifecycle : 'unclassified'
+    function libraryPage(items, requestedPage) {
+      const count = Math.max(1, Math.ceil(items.length / LIBRARY_PAGE_SIZE))
+      const page = Math.max(0, Math.min(count - 1, Number.isInteger(requestedPage) ? requestedPage : 0))
+      return { page, count, items: items.slice(page * LIBRARY_PAGE_SIZE, (page + 1) * LIBRARY_PAGE_SIZE) }
+    }
+
+    function libraryShelf({ code, label, items, activeId, onSelect, onOpen, tr, x, y, width, height, rows, page = 0, onPage = () => {} }) {
+      const visiblePage = libraryPage(items, page)
+      const pageItems = visiblePage.items
       const innerX = 12
       const innerY = 34
       const innerWidth = width - 24
-      const innerHeight = height - 42
+      const innerHeight = height - (visiblePage.count > 1 ? 74 : 42)
       const rowHeight = innerHeight / rows
-      const perRow = Math.max(1, Math.ceil(items.length / rows))
+      const perRow = Math.max(1, Math.ceil(pageItems.length / rows))
       const slotWidth = innerWidth / perRow
-      const spineWidth = Math.max(7, Math.min(17, slotWidth - 3))
+      const spineWidth = Math.max(7, Math.min(34, slotWidth - 5))
       const bookHeight = Math.max(22, Math.min(48, rowHeight - 15))
       return h('g', { key: code, className: 'wb-llib-shelf', transform: `translate(${x} ${y})` },
         h('rect', { className: 'wb-llib-shelf-shadow', x: 6, y: 8, width, height, rx: 3 }),
+        h('path', { className: 'wb-llib-shelf-edge', d: `M${width} 0 l8 -6 v${height} l-8 6 Z`, 'aria-hidden': 'true', pointerEvents: 'none' }),
         h('rect', { className: 'wb-llib-shelf-case', x: 0, y: 0, width, height, rx: 3 }),
         h('rect', { className: 'wb-llib-shelf-back', x: 8, y: 28, width: width - 16, height: height - 36, rx: 2 }),
+        h('path', { className: 'wb-llib-shelf-top', d: `M0 0 l8 -6 h${width} l-8 6 Z`, 'aria-hidden': 'true', pointerEvents: 'none' }),
         h('path', { className: 'wb-llib-shelf-wood', d: `M0 0 H${width} M0 ${height} H${width}` }),
         h('rect', { className: 'wb-llib-shelf-plaque', x: 8, y: 8, width: Math.min(190, width - 16), height: 16, rx: 1 }),
         h('text', { className: 'wb-llib-shelf-code', x: 14, y: 20 }, code),
@@ -6089,13 +6456,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           const rowTop = innerY + row * rowHeight
           return h('g', { key: 'row' + row },
             h('line', { className: 'wb-llib-shelf-board', x1: 10, x2: width - 10, y1: rowTop + rowHeight - 2, y2: rowTop + rowHeight - 2 }),
-            items.slice(row * perRow, row * perRow + perRow).map((project, index) => {
+            pageItems.slice(row * perRow, row * perRow + perRow).map((project, index) => {
               const itemHeight = Math.max(16, Math.min(bookHeight, bookHeight - (libraryHash(project) % 15)))
               const baseX = innerX + index * slotWidth + (slotWidth - spineWidth) / 2
               const baseY = rowTop + rowHeight - 8
-              const tone = `is-${project.lifecycle || 'unclassified'}`
+              const tone = `is-${libraryGroupId(project)}`
               const active = project.id === activeId
               const name = project.displayName || project.name || project.id
+              const nameChars = Array.from(String(name))
               const title = `${name} · ${lifecycleLabel(project.lifecycle, tr)}`
               return h('g', {
                 key: project.id,
@@ -6114,15 +6482,38 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               },
                 h('rect', { className: 'wb-llib-book-hit', x: -slotWidth / 2 + spineWidth / 2, y: -rowHeight, width: slotWidth, height: rowHeight, fill: 'transparent' }),
                 h('rect', { className: 'wb-llib-spine', x: 0, y: -itemHeight, width: spineWidth, height: itemHeight, rx: 1.2 }),
-                h('path', { className: 'wb-llib-spine-band', d: `M0 ${-itemHeight + 5} H${spineWidth} M0 ${-7} H${spineWidth}` }),
+                h('rect', { x: 1, y: -itemHeight + 2, width: Math.max(1, spineWidth * .15), height: itemHeight - 4, fill: 'rgba(255,245,220,.18)', pointerEvents: 'none', 'aria-hidden': 'true' }),
+                h('path', { className: 'wb-llib-spine-band', d: `M0 ${-itemHeight + 3} H${spineWidth} M0 ${-3} H${spineWidth}` }),
+                h('text', { className: 'wb-llib-spine-name', x: spineWidth / 2, y: -itemHeight + 12, textAnchor: 'middle', 'aria-hidden': 'true' }, nameChars.slice(0, 3).join('')),
+                nameChars.length > 3 ? h('text', { className: 'wb-llib-spine-name', x: spineWidth / 2, y: -itemHeight + 21, textAnchor: 'middle', 'aria-hidden': 'true' }, nameChars.slice(-3).join('')) : null,
                 active ? h('path', { className: 'wb-llib-bookmark', d: `M${spineWidth - 3} ${-itemHeight + 2} v10 l3 -3 l-3 -3` }) : null)
             }))
-        }))
+        }),
+        visiblePage.count > 1 ? h('g', { className: 'wb-llib-pagination' },
+          [-1, 1].map((direction) => {
+            const disabled = direction < 0 ? visiblePage.page === 0 : visiblePage.page === visiblePage.count - 1
+            const action = () => { if (!disabled) onPage(visiblePage.page + direction) }
+            return h('g', {
+              key: direction, className: 'wb-llib-page-button', role: 'button', tabIndex: disabled ? -1 : 0,
+              'aria-disabled': disabled, 'aria-label': `${label} · ${tr(direction < 0 ? 'sceneLibraryPreviousPage' : 'sceneLibraryNextPage')}`,
+              onClick: action,
+              onKeyDown: (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); action() } },
+            },
+              h('rect', { x: direction < 0 ? width / 2 - 60 : width / 2 + 32, y: height - 26, width: 28, height: 20, rx: 3 }),
+              h('text', { x: direction < 0 ? width / 2 - 46 : width / 2 + 46, y: height - 11, textAnchor: 'middle', 'aria-hidden': 'true' }, direction < 0 ? '‹' : '›'))
+          }),
+          h('text', { className: 'wb-llib-page-count', x: width / 2, y: height - 11, textAnchor: 'middle', 'aria-label': `${tr('sceneLibraryPage')} ${visiblePage.page + 1} / ${visiblePage.count}` }, `${visiblePage.page + 1} / ${visiblePage.count}`)) : null)
     }
 
     function LibraryReadingTable({ reading, cover, tr }) {
       const name = reading?.displayName || reading?.name || ''
       return h('g', { className: 'wb-llib-table', transform: 'translate(300 340)' },
+        h('g', { 'aria-hidden': 'true', pointerEvents: 'none' },
+          [85, 230, 360].map((x) => h('g', { key: x },
+            h('rect', { className: 'wb-llib-seat', x: x - 23, y: -18, width: 46, height: 25, rx: 5 }),
+            h('rect', { className: 'wb-llib-seat-cushion', x: x - 18, y: -14, width: 36, height: 13, rx: 3 }),
+            h('rect', { className: 'wb-llib-seat', x: x - 23, y: 161, width: 46, height: 25, rx: 5 }),
+            h('rect', { className: 'wb-llib-seat-cushion', x: x - 18, y: 169, width: 36, height: 13, rx: 3 })))),
         h('rect', { className: 'wb-llib-table-shadow', x: 8, y: 12, width: 430, height: 168, rx: 8 }),
         h('rect', { className: 'wb-llib-table-top', x: 0, y: 0, width: 430, height: 168, rx: 7 }),
         h('rect', { className: 'wb-llib-table-leather', x: 10, y: 10, width: 410, height: 148, rx: 5 }),
@@ -6150,18 +6541,19 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 h('text', { className: 'wb-llib-cover-title', x: 46, y: 72, textAnchor: 'middle' }, String(name).slice(0, 8)),
                 h('text', { className: 'wb-llib-cover-sub', x: 46, y: 88, textAnchor: 'middle' }, tr('sceneLibraryHonest'))),
           h('path', { className: 'wb-llib-cover-ribbon', d: 'M70 0 v22 l-6 -4 l-6 4 V0' })) : null,
-        h(AtelierFigure, { x: 212, y: 172, tone: 'is-idle', seated: true, scale: 1.12 }),
-        h(AtelierFigure, { x: 390, y: 172, tone: 'is-idle', seated: true, scale: 1.02 }))
+        reading ? h('text', { className: 'wb-llib-title-on-table', x: 148, y: 148, 'aria-hidden': 'true', title: name },
+          Array.from(name).length > 15 ? Array.from(name).slice(0, 15).join('') + '…' : name) : null)
     }
 
     function LibraryView({ projects, activeId, onActive, onOpen, onOpenPath, onScene, tr, query, setQuery, shelf, setShelf }) {
       const [opening, setOpening] = useState('')
+      const [inspectorOpen, setInspectorOpen] = useState(false)
       const openTimerRef = useRef(0)
       const reduced = earthReduced()
       const filtered = useMemo(() => {
         const needle = query.trim().toLowerCase()
         return projects.filter((project) => {
-          if (shelf !== 'all' && project.lifecycle !== shelf) return false
+          if (shelf !== 'all' && libraryGroupId(project) !== shelf) return false
           if (!needle) return true
           return (project.displayName || project.name || '').toLowerCase().includes(needle)
             || (project.path || '').toLowerCase().includes(needle)
@@ -6175,6 +6567,23 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const sessions = (reading?.sessions || []).slice().sort((a, b) => (Date.parse(b.updatedAt || '') || 0) - (Date.parse(a.updatedAt || '') || 0))
       const artifacts = reading?.runtime?.artifacts || []
       const mediaEmpty = media.status === 'loading' ? tr('sceneLibraryMediaLoading') : media.status === 'error' ? tr('sceneLibraryMediaFailed') : tr('sceneLibraryHonest')
+      const [pages, setPages] = useState({})
+      const selectReading = (id) => {
+        const project = filtered.find((item) => item.id === id)
+        if (project) {
+          const group = libraryGroupId(project)
+          const position = filtered.filter((item) => libraryGroupId(item) === group).findIndex((item) => item.id === id)
+          setPages((previous) => ({ ...previous, [group]: Math.floor(position / LIBRARY_PAGE_SIZE) }))
+        }
+        onActive(id); setInspectorOpen(true)
+      }
+      useEffect(() => {
+        const project = filtered.find((item) => item.id === activeId)
+        if (!project) return
+        const group = libraryGroupId(project)
+        const position = filtered.filter((item) => libraryGroupId(item) === group).findIndex((item) => item.id === activeId)
+        setPages((previous) => ({ ...previous, [group]: Math.floor(position / LIBRARY_PAGE_SIZE) }))
+      }, [activeId, query, shelf, projects])
       useEffect(() => () => { if (openTimerRef.current) clearTimeout(openTimerRef.current) }, [])
       const openBook = (project) => {
         if (!project || opening) return
@@ -6187,7 +6596,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         ['incubating', tr('sceneShelfIncubating'), 'B'],
         ['temporary', tr('sceneShelfTemporary'), 'C'],
         ['unclassified', tr('sceneShelfUnclassified'), 'D'],
-      ].map(([id, label, code]) => ({ id, label, code, items: filtered.filter((project) => project.lifecycle === id) }))
+      ].map(([id, label, code]) => ({ id, label, code, items: filtered.filter((project) => libraryGroupId(project) === id) }))
       const shelves = [
         { code: 'A', label: tr('sceneShelfPersistent'), items: groups[0].items, x: 40, y: 82, width: 230, height: 184, rows: 2 },
         { code: 'B', label: tr('sceneShelfIncubating'), items: groups[1].items, x: 300, y: 82, width: 440, height: 220, rows: 2 },
@@ -6195,12 +6604,12 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         { code: 'D', label: tr('sceneShelfUnclassified'), items: groups[3].items, x: 770, y: 292, width: 230, height: 228, rows: 2 },
       ]
       const scene = h('svg', {
-        className: 'wb-llib-svg', viewBox: '0 0 1040 600', role: 'img',
+        className: 'wb-llib-svg', viewBox: '0 0 1040 600', role: 'group',
         'aria-label': `${tr('sceneLibraryTitle')} · ${String(filtered.length)} ${tr('projects')}`,
       },
         h('defs', null,
           h('linearGradient', { id: 'wbLibFloor', x1: '0', y1: '0', x2: '0', y2: '1' },
-            h('stop', { offset: '0', stopColor: '#3e3326' }), h('stop', { offset: '1', stopColor: '#211b15' })),
+            h('stop', { offset: '0', stopColor: '#ddc7a6' }), h('stop', { offset: '1', stopColor: '#bda17f' })),
           h('radialGradient', { id: 'wbLibLamp', cx: '50%', cy: '46%', r: '58%' },
             h('stop', { offset: '0', stopColor: 'rgba(240,204,139,.26)' }), h('stop', { offset: '.55', stopColor: 'rgba(226,185,119,.08)' }), h('stop', { offset: '1', stopColor: 'rgba(226,185,119,0)' })),
           h('pattern', { id: 'wbLibPlanks', width: 112, height: 26, patternUnits: 'userSpaceOnUse' },
@@ -6213,11 +6622,21 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         h('path', { className: 'wb-llib-window', d: 'M420 28 V64 M462 28 V64 M502 28 V64 M542 28 V64 M582 28 V64 M620 28 V64' }),
         h('path', { className: 'wb-llib-arch', d: 'M410 64 V43 Q410 24 430 24 H610 Q630 24 630 43 V64' }),
         h('path', { className: 'wb-llib-arch-inner', d: 'M420 64 V45 Q420 34 436 34 H604 Q620 34 620 45 V64' }),
+        h('g', { 'aria-hidden': 'true', pointerEvents: 'none' },
+          h('path', { className: 'wb-llib-window-glow', d: 'M426 64 H466 L404 299 H331 Z M514 64 H554 L541 299 H474 Z M602 64 H618 L699 299 H640 Z' }),
+          h('path', { d: 'M20 64 V580 H35 V64 M1005 64 V580 H1020 V64', fill: '#627b70', stroke: '#4b655a', strokeWidth: 3 }),
+          h('path', { d: 'M36 554 H1004 M36 562 H1004', stroke: '#e2cba7', strokeWidth: 2, fill: 'none' }),
+          h('rect', { x: 73, y: 36, width: 96, height: 17, fill: '#a9c2b6', stroke: '#e2e1ca', strokeWidth: 3 }),
+          h('path', { d: 'M105 37 V52 M137 37 V52', stroke: '#e2e1ca', strokeWidth: 3 }),
+          h('rect', { x: 871, y: 36, width: 96, height: 17, fill: '#a9c2b6', stroke: '#e2e1ca', strokeWidth: 3 }),
+          h('path', { d: 'M903 37 V52 M935 37 V52', stroke: '#e2e1ca', strokeWidth: 3 })),
         h('ellipse', { className: 'wb-llib-light', cx: 500, cy: 330, rx: 300, ry: 220 }),
         h('ellipse', { className: 'wb-llib-light', cx: 880, cy: 160, rx: 160, ry: 120 }),
         h('rect', { className: 'wb-llib-rug', x: 286, y: 326, width: 474, height: 212, rx: 6 }),
+        h('rect', { x: 295, y: 335, width: 456, height: 194, rx: 3, fill: 'none', stroke: '#c2c7aa', strokeWidth: 2, pointerEvents: 'none', 'aria-hidden': 'true' }),
         h('path', { className: 'wb-llib-wall-base', d: 'M36 72 H1004 M36 574 H1004' }),
-        shelves.map((item) => libraryShelf({ ...item, activeId, onSelect: onActive, onOpen: openBook, tr })),
+        shelves.map((item, index) => libraryShelf({ ...item, activeId, onSelect: selectReading, onOpen: openBook, tr,
+          page: pages[groups[index].id], onPage: (page) => setPages((previous) => ({ ...previous, [groups[index].id]: page })) })),
         h('g', { className: 'wb-llib-catalog', transform: 'translate(780 96)' },
           h('rect', { className: 'wb-llib-catalog-shadow', x: 5, y: 6, width: 208, height: 154, rx: 3 }),
           h('rect', { className: 'wb-llib-catalog-case', x: 0, y: 0, width: 208, height: 154, rx: 3 }),
@@ -6233,11 +6652,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h('path', { className: 'wb-llib-ladder-rail', d: 'M0 0 V114 M18 0 V114' }),
           Array.from({ length: 5 }).map((_, index) => h('line', { key: 'rung' + index, className: 'wb-llib-ladder-rung', x1: 0, x2: 18, y1: 18 + index * 20, y2: 18 + index * 20 }))),
         LibraryReadingTable({ reading, cover, tr }),
-        h(AtelierFigure, { x: 904, y: 250, tone: 'is-idle', scale: 1.08 }),
-        h(AtelierFigure, { x: 290, y: 276, tone: 'is-idle', scale: .94 }),
+        h('g', { 'aria-hidden': 'true', pointerEvents: 'none' },
+          h('ellipse', { cx: 278, cy: 303, rx: 12, ry: 5, fill: 'rgba(60,50,37,.25)' }),
+          h('rect', { x: 269, y: 287, width: 18, height: 15, rx: 2, fill: '#b87d5e', stroke: '#805643', strokeWidth: 2 }),
+          h('path', { d: 'M278 289 C260 270 266 259 278 279 C283 256 296 264 284 289Z', fill: '#6c9a77', stroke: '#4f7c60', strokeWidth: 2 }),
+          h('ellipse', { cx: 759, cy: 552, rx: 12, ry: 5, fill: 'rgba(60,50,37,.25)' }),
+          h('rect', { x: 750, y: 537, width: 18, height: 15, rx: 2, fill: '#b87d5e', stroke: '#805643', strokeWidth: 2 }),
+          h('path', { d: 'M759 539 C741 520 747 509 759 529 C764 506 777 514 765 539Z', fill: '#6c9a77', stroke: '#4f7c60', strokeWidth: 2 })),
         h('text', { className: 'wb-llib-floor-note', x: 40, y: 574 }, tr('sceneLibrarySpatialNote')),
         filtered.length ? null : h('text', { className: 'wb-llib-no-match', x: 520, y: 310, textAnchor: 'middle' }, tr('sceneLibraryNoMatch')))
-      return h('div', { className: cx('wb-library', 'wb-llib', 'wb-scene-enter', opening && 'is-opening') },
+      return h('div', { className: cx('wb-library', 'wb-llib', 'wb-scene-enter', opening && 'is-opening', !inspectorOpen && 'is-inspector-collapsed') },
         h('header', { className: 'wb-llib-top' },
           h('div', { className: 'wb-llib-brand' },
             h('span', { className: 'wb-llib-mark' }, h(Glyph, { name: 'library', size: 18 })),
@@ -6255,8 +6679,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               h('div', { className: 'wb-llib-tabs' },
                 h('button', { type: 'button', className: cx('wb-llib-tab', shelf === 'all' && 'on'), onClick: () => setShelf('all') }, tr('all'), ' ', h('small', null, String(projects.length))),
                 groups.map((group) => h('button', { key: group.id, type: 'button', className: cx('wb-llib-tab', shelf === group.id && 'on'), onClick: () => setShelf(group.id) }, group.label, ' ', h('small', null, String(group.items.length))))),
-              h('div', { className: 'wb-llib-count' }, `${filtered.length} / ${projects.length}`)),
-            h('div', { className: 'wb-llib-stage' }, scene)),
+              h('div', { className: 'wb-llib-count' }, `${filtered.length} / ${projects.length}`),
+              h('button', { type: 'button', className: 'wb-scene-details-toggle', 'aria-expanded': inspectorOpen, onClick: () => setInspectorOpen((open) => !open) }, tr(inspectorOpen ? 'sceneHideDetails' : 'sceneShowDetails'))),
+            h('div', { className: 'wb-llib-stage', role: 'region', tabIndex: 0, 'aria-label': tr('sceneLibraryReadingRoom') }, scene),
+            h('div', { className: 'wb-llib-project-index', role: 'group', 'aria-label': tr('sceneProjectIndex') },
+              h('span', null, tr('sceneProjectIndex')),
+              filtered.map((project) => h('button', {
+                key: project.id, type: 'button', 'aria-pressed': reading?.id === project.id,
+                onClick: () => selectReading(project.id), onDoubleClick: () => openBook(project),
+                title: project.displayName || project.name || project.id,
+              }, project.displayName || project.name || project.id)))),
           h('aside', { className: 'wb-llib-inspector', 'aria-live': 'polite' },
             reading ? h(React.Fragment, null,
               h('div', { className: 'wb-llib-inspector-overline' }, tr('sceneLibraryDesk')),
@@ -6331,9 +6763,93 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         h('text', { x: 0, y: 2, textAnchor: 'middle' }, text))
     }
 
+    const STUDIO_ROOM_CAPACITY = 24
+
+    // Page the complete collection before applying the search filter. A search
+    // must not renumber rooms or move a project to a different work area.
+    function studioRooms(projects, visibleProjects, tr) {
+      const groups = { persistent: [], incubating: [], temporary: [], unclassified: [] }
+      for (const project of projects) {
+        const lifecycle = Object.hasOwn(groups, project.lifecycle) ? project.lifecycle : 'unclassified'
+        groups[lifecycle].push(project)
+      }
+      const visible = new Set(visibleProjects)
+      const specs = [
+        ['persistent', 'offices', 'A', 'sceneStudioPersistent'],
+        ['incubating', 'workshop', 'B', 'sceneStudioIncubating'],
+        ['temporary', 'shared', 'C', 'sceneStudioTemporary'],
+        ['unclassified', 'intake', 'D', 'sceneStudioUnclassified'],
+      ]
+      const result = []
+      for (const [lifecycle, kind, prefix, labelKey] of specs) {
+        // Id ordering keeps page assignments stable when the source changes order.
+        const items = groups[lifecycle].slice().sort((a, b) => {
+          const left = String(a.id), right = String(b.id)
+          return left < right ? -1 : left > right ? 1 : 0
+        })
+        for (let start = 0, index = 0; start < items.length; start += STUDIO_ROOM_CAPACITY, index += 1) {
+          const part = items.slice(start, start + STUDIO_ROOM_CAPACITY).filter((project) => visible.has(project))
+          if (!part.length) continue
+          const number = String(index + 1).padStart(2, '0')
+          const id = lifecycle === 'incubating' || index > 0 ? `${lifecycle}-${index}` : lifecycle
+          result.push({ id, kind, code: prefix + number, index, label: tr(labelKey) + ' ' + number, projects: part })
+        }
+      }
+      return result
+    }
+
+    function studioDeskLayout(count) {
+      const cols = count <= 1 ? 1 : count <= 4 ? 2 : count <= 9 ? 3 : count <= 16 ? 4 : 5
+      const rows = Math.max(1, Math.ceil(count / cols))
+      const width = Math.min(690, cols * 150), height = Math.min(398, rows * 92)
+      const left = 44 + (690 - width) / 2, top = count <= 9 ? 156 : 124
+      const cellW = width / cols, cellH = height / rows
+      return { count, cols, rows, left, top, width, height, cellW, cellH, deskW: Math.min(146, cellW - 12), deskH: Math.min(58, cellH - 10) }
+    }
+
+    // Office-only figures; walking figures are decorative, not agent status.
+    function OfficePixelPerson({ x, y, tone = 'is-idle', seated = false, scale = 1, walking = false, variant = 0 }) {
+      const shirts = ['#7095a1', '#bb8872', '#859c78', '#a48ca2']
+      const shirt = shirts[variant % shirts.length]
+      const pixel = (key, x, y, width, height, fill) => h('rect', { key, x, y, width, height, fill })
+      return h('g', { className: cx('wb-office-pixel', walking && 'is-walking'),
+        transform: `translate(${x} ${y}) scale(${scale})`, 'aria-hidden': 'true' },
+        pixel('shadow', -9, 17, 18, 4, 'rgba(43,39,31,.25)'),
+        h('g', { className: 'wb-office-step-a' },
+          pixel('leg1', -6, 9, 5, 9, '#43565a'), pixel('leg2', 2, 9, 5, 9, '#43565a'),
+          pixel('shoe1', -7, 16, 6, 3, '#293b40'), pixel('shoe2', 2, 16, 6, 3, '#293b40')),
+        h('g', { className: 'wb-office-step-b' },
+          pixel('leg1', -7, 9, 5, 6, '#43565a'), pixel('leg2', 2, 9, 5, 10, '#43565a'),
+          pixel('shoe1', -9, 13, 7, 3, '#293b40'), pixel('shoe2', 3, 17, 7, 3, '#293b40')),
+        pixel('body-shadow', -9, -3, 18, 14, '#49616a'),
+        pixel('shirt', -7, -3, 14, 12, shirt),
+        pixel('shirt-light', -4, -2, 8, 2, '#e7d3b8'),
+        pixel('shirt-shadow', -7, 6, 14, 2, '#556f75'),
+        pixel('arm-l', -11, -1, 4, 10, shirt), pixel('arm-r', 7, -1, 4, 10, shirt),
+        pixel('hand-l', -11, 7, 4, 3, '#e3b892'), pixel('hand-r', 7, 7, 4, 3, '#e3b892'),
+        pixel('head-shadow', -7, -15, 14, 13, '#4b3a35'),
+        pixel('face', -5, -13, 10, 10, '#e3b892'),
+        pixel('hair', -6, -15, 12, 4, '#443731'),
+        pixel('hair-light', -4, -15, 7, 2, '#675349'),
+        pixel('hair-side', -7, -12, 3, 6, '#443731'),
+        pixel('eye-l', -3, -9, 2, 2, '#3e3632'), pixel('eye-r', 2, -9, 2, 2, '#3e3632'))
+    }
+
+    function OfficePixelPlant({ x, y, scale = 1 }) {
+      return h('g', { className: 'wb-office-pixel', transform: `translate(${x} ${y}) scale(${scale})`, 'aria-hidden': 'true' },
+        h('rect', { x: -8, y: 2, width: 16, height: 12, fill: '#a9654e' }),
+        h('rect', { x: -10, y: 0, width: 20, height: 4, fill: '#d09272' }),
+        h('rect', { x: -2, y: -17, width: 4, height: 18, fill: '#50785a' }),
+        h('rect', { x: -12, y: -13, width: 11, height: 6, fill: '#5d9471' }),
+        h('rect', { x: 1, y: -19, width: 10, height: 7, fill: '#70a780' }),
+        h('rect', { x: -7, y: -23, width: 9, height: 8, fill: '#6ea27b' }),
+        h('rect', { x: 3, y: -10, width: 12, height: 6, fill: '#4b8063' }))
+    }
+
     function StudioView({ projects, activeId, onActive, onOpen, onOpenPath, onRefresh, onScene, tr, query, setQuery, roomId, setRoomId, camera, setCamera }) {
       const [mediaPicker, setMediaPicker] = useState(false)
       const [entering, setEntering] = useState('')
+      const [inspectorOpen, setInspectorOpen] = useState(false)
       const viewportRef = useRef(null)
       const dragRef = useRef(null)
       const suppressClickRef = useRef(0)
@@ -6353,44 +6869,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const cover = activeMedia.data?.representative || activeMedia.data?.items?.[0] || null
       const reduced = earthReduced()
 
-      const rooms = useMemo(() => {
-        const groups = { persistent: [], incubating: [], temporary: [], unclassified: [] }
-        for (const project of visibleProjects) {
-          const lifecycle = groups[project.lifecycle] ? project.lifecycle : 'unclassified'
-          groups[lifecycle].push(project)
-        }
-        const result = []
-        if (groups.persistent.length) result.push({
-          id: 'persistent', kind: 'offices', code: 'A', index: 0,
-          label: tr('sceneStudioPersistent'), projects: groups.persistent,
-        })
-        if (groups.incubating.length) {
-          const size = Math.max(8, Math.ceil(groups.incubating.length / 4))
-          for (let start = 0, index = 0; start < groups.incubating.length; start += size, index += 1) {
-            const part = groups.incubating.slice(start, start + size)
-            result.push({
-              id: 'incubating-' + index, kind: 'workshop', code: String(index + 1).padStart(2, '0'), index,
-              label: tr('sceneStudioIncubating') + ' ' + String(index + 1).padStart(2, '0'), projects: part,
-            })
-          }
-        }
-        if (groups.temporary.length) result.push({
-          id: 'temporary', kind: 'shared', code: 'T', index: 0,
-          label: tr('sceneStudioTemporary'), projects: groups.temporary,
-        })
-        if (groups.unclassified.length) result.push({
-          id: 'unclassified', kind: 'intake', code: 'U', index: 0,
-          label: tr('sceneStudioUnclassified'), projects: groups.unclassified,
-        })
-        return result
-      }, [visibleProjects, tr])
+      const rooms = useMemo(() => studioRooms(projects, visibleProjects, tr), [projects, visibleProjects, tr])
 
       const room = roomId === 'overview' ? null : rooms.find((item) => item.id === roomId) || null
       const activeRoom = active ? rooms.find((item) => item.projects.some((project) => project.id === active.id)) || null : null
       const cameraState = {
         x: Number(camera?.x) || 0,
         y: Number(camera?.y) || 0,
-        z: Math.max(0.62, Math.min(1.4, Number(camera?.z) || 1)),
+        z: Math.max(0.25, Math.min(1.4, Number(camera?.z) || 1)),
       }
 
       useEffect(() => {
@@ -6420,7 +6906,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           event.preventDefault()
           const step = event.deltaY > 0 ? -0.055 : 0.055
           setCamera((previous) => {
-            const z = Math.max(0.62, Math.min(1.4, (Number(previous?.z) || 1) + step))
+            const z = Math.max(0.25, Math.min(1.4, (Number(previous?.z) || 1) + step))
             return { x: Number(previous?.x) || 0, y: Number(previous?.y) || 0, z }
           })
         }
@@ -6433,7 +6919,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         const width = Math.max(320, (node?.clientWidth || 1040) - 16)
         const height = Math.max(280, (node?.clientHeight || 600) - 16)
         const vertical = (height - 18) / 600
-        return Math.max(0.62, Math.min(1, width / 1040, vertical))
+        return Math.max(0.25, Math.min(1, width / 1040, vertical))
       }
 
       useEffect(() => {
@@ -6477,7 +6963,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 
       const updateZoom = (delta) => {
         setCamera((previous) => {
-          const z = Math.max(0.62, Math.min(1.4, (Number(previous?.z) || 1) + delta))
+          const z = Math.max(0.25, Math.min(1.4, (Number(previous?.z) || 1) + delta))
           return { x: Number(previous?.x) || 0, y: Number(previous?.y) || 0, z }
         })
       }
@@ -6500,7 +6986,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         event.preventDefault()
         setCamera((previous) => ({
           x: drag.left + dx, y: drag.top + dy,
-          z: Math.max(0.62, Math.min(1.4, Number(previous?.z) || 1)),
+          z: Math.max(0.25, Math.min(1.4, Number(previous?.z) || 1)),
         }))
       }
 
@@ -6585,7 +7071,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           'data-project-id': project.id,
           'aria-pressed': project.id === activeId,
           title: `${project.displayName || project.name} · ${tr('sceneStudioRoomHint')}`,
-          onClick: () => guardClick(() => onActive(project.id)),
+          onClick: () => guardClick(() => { onActive(project.id); setInspectorOpen(true) }),
           onDoubleClick: () => guardClick(() => enterProject(project)),
         },
           h('span', { className: 'wb-studio-desk-top' },
@@ -6646,8 +7132,10 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         h('rect', { className: 'wb-atelier-mini-shadow', x: 2, y: 4, width: w, height: rh, rx: 3 }),
         h('rect', { className: 'wb-atelier-mini-table', x: 0, y: 0, width: w, height: rh, rx: 3 }),
         h('rect', { className: 'wb-atelier-mini-screen', x: w * 0.18, y: 4, width: w * 0.38, height: rh * 0.34, rx: 1.5 }),
+        h('path', { d: `M${w * 0.22} 8 h${w * 0.18} M${w * 0.22} 11 h${w * 0.12}`, stroke: '#a9c9c5', strokeWidth: 1, fill: 'none', 'aria-hidden': 'true' }),
+        h('rect', { x: w * .26, y: rh * .54, width: w * .26, height: 3, fill: '#f6e8ce', 'aria-hidden': 'true' }),
         h('rect', { className: 'wb-atelier-mini-paper', x: w * 0.62, y: 7, width: w * 0.2, height: rh * 0.24, rx: 1 }),
-        h(AtelierFigure, { x: w * 0.5, y: rh + 8, tone: atelierTone(project), seated: true, scale: 0.56 }),
+        h(OfficePixelPerson, { x: w * 0.5, y: rh + 8, tone: atelierTone(project), seated: true, scale: 0.56 }),
         h('circle', { className: cx('wb-atelier-state-dot', atelierTone(project)), cx: w - 4, cy: 4, r: 2.5 }))
 
       const wingFurniture = (wing, w, rh) => {
@@ -6715,6 +7203,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         },
           h('rect', { className: 'wb-atelier-wing-shadow', x: 10, y: 12, width: w, height: rh, rx: 4 }),
           h('path', { className: 'wb-atelier-wing-floor', d: `M0 18 H${w} L${w - 15} ${rh} H15 Z` }),
+          h('rect', { x: 20, y: 20, width: w - 40, height: rh - 26, fill: 'url(#wbAtelierPlanks)', opacity: .35, pointerEvents: 'none' }),
           h('ellipse', { className: 'wb-atelier-wing-light', cx: w * 0.52, cy: rh * 0.52, rx: w * 0.42, ry: rh * 0.42 }),
           h('path', { className: 'wb-atelier-wing-wall', d: `M0 18 H${w} V0 H0 Z` }),
           h('path', { className: 'wb-atelier-wing-side', d: `M0 18 V${rh} H15 L0 18` }),
@@ -6730,15 +7219,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('ellipse', { className: 'wb-atelier-pendant-glow', cx: w * ratio, cy: 52, rx: 30, ry: 16 }))),
           h('path', { className: 'wb-atelier-floor-rule', d: `M18 ${rh - 34} H${w - 18} M18 ${rh - 64} H${w - 18} M18 ${rh - 94} H${w - 18}` }),
           wingFurniture(wing, w, rh),
+          h(OfficePixelPlant, { x: w - 20, y: rh - 27, scale: .68 }),
           samples.map((project, index) => miniDesk(project, startX + (index % cols) * gapX, startY + Math.floor(index / cols) * gapY, deskW, deskH)),
           wing.kind === 'offices'
-            ? h(AtelierFigure, { x: 126, y: rh - 58, tone: 'is-idle', scale: 1.08 })
-            : h(AtelierFigure, { x: w - 54, y: rh - 86, tone: atelierTone(samples[0] || {}), scale: 1.02 }),
+            ? h(OfficePixelPerson, { x: 126, y: rh - 58, tone: 'is-idle', scale: 1.08 })
+            : h(OfficePixelPerson, { x: w - 54, y: rh - 86, tone: atelierTone(samples[0] || {}), scale: 1.02 }),
           wing.kind !== 'offices'
-            ? h(AtelierFigure, { x: w * 0.33, y: rh - 42, tone: 'is-idle', scale: 0.9 })
+            ? h(OfficePixelPerson, { x: w * 0.33, y: rh - 42, tone: 'is-idle', scale: 0.9 })
             : null,
           wing.kind !== 'offices'
-            ? h('g', { className: 'wb-atelier-stroller' }, h(AtelierFigure, { x: 70, y: rh - 46, tone: 'is-idle', scale: 0.9 }))
+            ? h('g', { className: 'wb-atelier-stroller' }, h(OfficePixelPerson, { x: 70, y: rh - 46, tone: 'is-idle', scale: 0.9, walking: true }))
             : null,
           h('g', { className: 'wb-atelier-plaque', transform: 'translate(14 14)' },
             h('rect', { className: 'wb-atelier-plaque-bg', x: 0, y: 0, width: 310, height: 38, rx: 2 }),
@@ -6750,25 +7240,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }
 
       const roomTabs = room ? rooms.filter((item) => item.kind === room.kind) : []
-      const roomDeskLayout = (() => {
-        const count = room?.projects.length || 0
-        const cols = count <= 4 ? 2 : count <= 9 ? 3 : count <= 16 ? 4 : count <= 24 ? 5 : 6
-        const rows = Math.max(1, Math.ceil(count / cols))
-        const left = 44
-        const top = 124
-        const width = 690
-        const height = 398
-        const cellW = width / cols
-        const cellH = height / rows
-        return { count, cols, rows, left, top, width, height, cellW, cellH, deskW: Math.min(146, cellW - 12), deskH: Math.min(58, cellH - 10) }
-      })()
+      const roomDeskLayout = studioDeskLayout(room?.projects.length || 0)
 
       const renderRoomDesk = (project, index) => {
         const { cols, left, top, cellW, cellH, deskW, deskH } = roomDeskLayout
         const x = left + (index % cols) * cellW + cellW / 2
         const y = top + Math.floor(index / cols) * cellH + cellH / 2
         const tone = atelierTone(project)
-        const name = shortName(project, roomDeskLayout.count > 20 ? 7 : 10)
+        const name = shortName(project, roomDeskLayout.count > 20 ? 7 : 8)
         return h('g', {
           key: project.id,
           className: cx('wb-atelier-desk', tone, project.id === activeId && 'is-active'),
@@ -6778,24 +7257,26 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           'aria-pressed': project.id === activeId,
           'aria-label': `${project.displayName || project.name} · ${tr('sceneStudioDesk')}`,
           title: `${project.displayName || project.name} · ${tr('sceneStudioRoomHint')}`,
-          onClick: () => guardClick(() => onActive(project.id)),
+          onClick: () => guardClick(() => { onActive(project.id); setInspectorOpen(true) }),
           onDoubleClick: () => guardClick(() => enterProject(project)),
           onKeyDown: (event) => {
             if (event.key === 'Enter') { event.preventDefault(); guardClick(() => enterProject(project)) }
-            else if (event.key === ' ') { event.preventDefault(); guardClick(() => onActive(project.id)) }
+            else if (event.key === ' ') { event.preventDefault(); guardClick(() => { onActive(project.id); setInspectorOpen(true) }) }
           },
         },
           h('rect', { className: 'wb-atelier-desk-shadow', x: -deskW / 2 + 4, y: -deskH / 2 + 5, width: deskW, height: deskH, rx: 3 }),
           h('rect', { className: 'wb-atelier-desk-top', x: -deskW / 2, y: -deskH / 2, width: deskW, height: deskH, rx: 3 }),
           h('rect', { className: 'wb-atelier-desk-back', x: -deskW / 2, y: -deskH / 2 - 3, width: deskW, height: 5, rx: 1.5 }),
-          h('rect', { className: 'wb-atelier-desk-screen', x: -deskW * 0.23, y: -deskH * 0.32, width: deskW * 0.4, height: deskH * 0.3, rx: 1.5 }),
-          h('rect', { className: 'wb-atelier-desk-paper', x: deskW * 0.16, y: -deskH * 0.27, width: deskW * 0.18, height: deskH * 0.22, rx: 1 }),
-          h('circle', { className: 'wb-atelier-desk-lamp', cx: deskW * 0.33, cy: -deskH * 0.18, r: 3.2 }),
+          h('rect', { className: 'wb-office-nameplate', x: -deskW / 2 + 2, y: -deskH / 2 + 2, width: deskW - 4, height: 16, rx: 1 }),
+          h('text', { className: 'wb-atelier-desk-name', x: -deskW / 2 + 6, y: -deskH / 2 + 14 }, name),
+          h('rect', { className: 'wb-atelier-desk-screen', x: -deskW * 0.23, y: -deskH / 2 + 21, width: deskW * 0.4, height: deskH * 0.25, rx: 1 }),
+          h('path', { d: `M${-deskW * .19} ${-deskH / 2 + 25} h${deskW * .21} M${-deskW * .19} ${-deskH / 2 + 29} h${deskW * .13}`, stroke: '#a9c9c5', strokeWidth: 1, fill: 'none', 'aria-hidden': 'true' }),
+          h('rect', { className: 'wb-atelier-desk-paper', x: deskW * 0.2, y: -deskH / 2 + 21, width: deskW * 0.17, height: deskH * 0.22, rx: 1 }),
+          h('path', { d: `M${deskW * .22} ${-deskH / 2 + 25} h${deskW * .1} M${deskW * .22} ${-deskH / 2 + 29} h${deskW * .07}`, stroke: '#bbab90', strokeWidth: 1, fill: 'none', 'aria-hidden': 'true' }),
           h('rect', { className: 'wb-atelier-desk-keyboard', x: -deskW * 0.12, y: deskH * 0.1, width: deskW * 0.3, height: 4, rx: 1 }),
           h('circle', { className: 'wb-atelier-state-dot', cx: deskW / 2 - 5, cy: -deskH / 2 + 5, r: 2.8 }),
           h('rect', { className: 'wb-atelier-chair', x: -8, y: deskH / 2 + 2, width: 16, height: 8, rx: 3 }),
-          h(AtelierFigure, { x: 0, y: deskH / 2 + (roomDeskLayout.count > 20 ? 5 : 9), tone, seated: true, scale: roomDeskLayout.count > 20 ? 0.72 : 1.02 }),
-          h('text', { className: 'wb-atelier-desk-name', x: -deskW / 2 + 5, y: deskH / 2 - 5 }, name),
+          h(OfficePixelPerson, { x: 0, y: deskH / 2 + (roomDeskLayout.count > 20 ? 5 : 9), tone, variant: index, seated: true, scale: roomDeskLayout.count > 20 ? 0.72 : 1.02 }),
           project.id === activeId ? h('rect', { className: 'wb-atelier-desk-focus', x: -deskW / 2 - 3, y: -deskH / 2 - 3, width: deskW + 6, height: deskH + 6, rx: 5 }) : null)
       }
 
@@ -6822,8 +7303,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         h('circle', { className: 'wb-atelier-stool', cx: 108, cy: 112, r: 12 }),
         h('rect', { className: 'wb-atelier-pantry-table', x: 76, y: 154, width: 86, height: 54, rx: 3 }),
         h('path', { className: 'wb-atelier-pantry-table-line', d: 'M88 168 H148 M88 180 H136' }),
-        h(AtelierFigure, { x: 160, y: 206, tone: 'is-idle', scale: 1.15 }),
-        h(AtelierFigure, { x: 38, y: 206, tone: 'is-idle', scale: 1 }),
+        h('rect', { x: 25, y: 270, width: 170, height: 101, fill: '#bbab8f', stroke: '#d9cdb0', strokeWidth: 3 }),
+        h('rect', { x: 46, y: 286, width: 128, height: 44, fill: '#728f88', stroke: '#496c66', strokeWidth: 3 }),
+        h('rect', { x: 51, y: 290, width: 55, height: 24, fill: '#94b1a5' }),
+        h('rect', { x: 114, y: 290, width: 55, height: 24, fill: '#94b1a5' }),
+        h('rect', { x: 67, y: 342, width: 86, height: 19, fill: '#e4c79c', stroke: '#987b5e', strokeWidth: 2 }),
+        h('rect', { x: 87, y: 347, width: 22, height: 7, fill: '#f7ead0' }),
+        h('rect', { x: 121, y: 347, width: 8, height: 8, fill: '#bd846d' }),
+        h(OfficePixelPlant, { x: 184, y: 390, scale: 1.1 }),
+        h(OfficePixelPerson, { x: 160, y: 206, tone: 'is-idle', scale: 1.15 }),
+        h(OfficePixelPerson, { x: 38, y: 206, tone: 'is-idle', scale: 1 }),
         h('rect', { className: 'wb-atelier-plant-pot', x: 22, y: 406, width: 22, height: 18, rx: 2 }),
         h('path', { className: 'wb-atelier-plant-leaf', d: 'M33 408 C8 366 28 344 40 388 C58 342 76 370 48 414' }),
         h('text', { className: 'wb-atelier-pantry-label', x: 110, y: 458, textAnchor: 'middle' }, tr('sceneStudioPantry')),
@@ -6846,14 +7335,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h('pattern', { id: 'wbAtelierGrid', width: 28, height: 28, patternUnits: 'userSpaceOnUse' },
             h('path', { d: 'M28 0 H0 V28', fill: 'none', stroke: 'rgba(184,208,187,.035)', strokeWidth: 1 })),
           h('pattern', { id: 'wbAtelierPlanks', width: 112, height: 26, patternUnits: 'userSpaceOnUse' },
-            h('path', { d: 'M0 26 H112 M56 0 V26 M0 0 V26', fill: 'none', stroke: 'rgba(20,14,8,.24)', strokeWidth: 1 }))),
+            h('path', { d: 'M0 26 H112 M56 0 V26 M0 0 V26', fill: 'none', stroke: 'rgba(80,54,30,.3)', strokeWidth: 1 }))),
         h('rect', { className: 'wb-atelier-backdrop', x: 0, y: 0, width: 1040, height: 600 }),
         h('rect', { className: 'wb-atelier-room-floor', x: 20, y: 72, width: 1000, height: 508, rx: 4 }),
         h('rect', { className: 'wb-atelier-planks', x: 20, y: 72, width: 1000, height: 508, fill: 'url(#wbAtelierPlanks)' }),
         h('path', { className: 'wb-atelier-corridor', d: 'M20 302 H1020 V324 H20 Z' }),
         h('text', { className: 'wb-atelier-corridor-label', x: 32, y: 317 }, tr('sceneStudioCorridor')),
         h('path', { className: 'wb-atelier-corridor-line', d: 'M220 313 H716' }),
-        h('g', { className: 'wb-atelier-walker is-corridor' }, h(AtelierFigure, { x: 450, y: 314, tone: 'is-idle', scale: 0.82 })),
+        h('g', { className: 'wb-atelier-walker is-corridor' }, h(OfficePixelPerson, { x: 450, y: 314, tone: 'is-idle', scale: 0.82, walking: true })),
         wings.length
           ? wings.map(renderWing)
           : h('g', null,
@@ -6890,7 +7379,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h('pattern', { id: 'wbAtelierRoomGrid', width: 32, height: 32, patternUnits: 'userSpaceOnUse' },
             h('path', { d: 'M32 0 H0 V32', fill: 'none', stroke: 'rgba(197,218,199,.04)', strokeWidth: 1 })),
           h('pattern', { id: 'wbAtelierRoomPlanks', width: 112, height: 26, patternUnits: 'userSpaceOnUse' },
-            h('path', { d: 'M0 26 H112 M56 0 V26 M0 0 V26', fill: 'none', stroke: 'rgba(18,12,7,.26)', strokeWidth: 1 }))),
+            h('path', { d: 'M0 26 H112 M56 0 V26 M0 0 V26', fill: 'none', stroke: 'rgba(80,54,30,.3)', strokeWidth: 1 }))),
         h('rect', { className: 'wb-atelier-backdrop', x: 0, y: 0, width: 1040, height: 600 }),
         h('rect', { className: 'wb-atelier-room-floor', x: 20, y: 64, width: 1000, height: 516, rx: 4 }),
         h('rect', { className: 'wb-atelier-planks', x: 20, y: 64, width: 1000, height: 516, fill: 'url(#wbAtelierRoomPlanks)' }),
@@ -6924,10 +7413,37 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           h('rect', { className: 'wb-atelier-printer-body', x: 0, y: 0, width: 34, height: 24, rx: 2 }),
           h('rect', { className: 'wb-atelier-printer-paper', x: 7, y: -4, width: 20, height: 5, rx: .5 }),
           h('circle', { className: 'wb-atelier-printer-dot', cx: 26, cy: 12, r: 1.4 })),
+        roomDeskLayout.count <= 9 ? h('g', { 'aria-hidden': 'true', className: 'wb-office-room-details' },
+          h('rect', { className: 'wb-office-partition', x: 58, y: 139, width: 105, height: 12 }),
+          h('rect', { className: 'wb-office-partition-glass', x: 62, y: 141, width: 42, height: 8 }),
+          h('rect', { className: 'wb-office-partition-glass', x: 111, y: 141, width: 46, height: 8 }),
+          h('rect', { x: 61, y: 164, width: 88, height: 84, fill: '#a78c6f', stroke: '#806b54', strokeWidth: 3 }),
+          h('rect', { x: 66, y: 169, width: 78, height: 18, fill: '#e3d1ac' }),
+          h('rect', { x: 66, y: 191, width: 78, height: 18, fill: '#d3c19f' }),
+          h('rect', { x: 66, y: 213, width: 78, height: 29, fill: '#e3d1ac' }),
+          h('path', { d: 'M73 175 h12 v9 H73z M90 175 h11 v9 H90z M106 175 h14 v9 h-14z M72 199 h22 M101 199 h28 M72 222 h15 v14 H72z M93 222 h19 v14 H93z M118 222 h18 v14 h-18z', fill: '#9aab96', stroke: '#718c7e', strokeWidth: 1 }),
+          h(OfficePixelPlant, { x: 102, y: 303, scale: 1.35 }),
+          h('rect', { className: 'wb-office-partition', x: 660, y: 146, width: 77, height: 12 }),
+          h('rect', { className: 'wb-office-partition-glass', x: 665, y: 148, width: 66, height: 8 }),
+          h('rect', { x: 675, y: 176, width: 58, height: 86, fill: '#ede1c7', stroke: '#80998c', strokeWidth: 3 }),
+          h('path', { d: 'M685 188 h36 M685 197 h24 M685 213 h35 M685 222 h21 M685 238 h34', stroke: '#8a9f91', strokeWidth: 3 }),
+          h('rect', { className: 'wb-office-meeting-floor', x: 251, y: 457, width: 277, height: 87 }),
+          h('rect', { className: 'wb-office-meeting-chair', x: 278, y: 465, width: 43, height: 17 }),
+          h('rect', { className: 'wb-office-meeting-chair', x: 343, y: 465, width: 43, height: 17 }),
+          h('rect', { className: 'wb-office-meeting-chair', x: 408, y: 465, width: 43, height: 17 }),
+          h('rect', { className: 'wb-office-meeting-chair', x: 278, y: 520, width: 43, height: 17 }),
+          h('rect', { className: 'wb-office-meeting-chair', x: 343, y: 520, width: 43, height: 17 }),
+          h('rect', { className: 'wb-office-meeting-chair', x: 408, y: 520, width: 43, height: 17 }),
+          h('rect', { className: 'wb-office-meeting-table', x: 274, y: 483, width: 231, height: 35 }),
+          h('rect', { x: 300, y: 491, width: 29, height: 17, fill: '#f6ead2' }),
+          h('path', { d: 'M305 496 h18 M305 501 h14 M305 505 h17', stroke: '#b9ab90', strokeWidth: 1 }),
+          h('rect', { x: 359, y: 492, width: 9, height: 9, fill: '#c99576' }),
+          h('rect', { x: 416, y: 491, width: 29, height: 17, fill: '#aec6b6' }),
+          h('rect', { x: 456, y: 493, width: 9, height: 9, fill: '#e9d9b7' })) : null,
         h('g', { className: 'wb-atelier-room-plant', transform: 'translate(724 516)' },
           h('rect', { className: 'wb-atelier-plant-pot', x: -10, y: 0, width: 20, height: 16, rx: 2 }),
           h('path', { className: 'wb-atelier-plant-leaf', d: 'M0 2 C-22 -34 -4 -52 8 -18 C24 -50 40 -28 14 4' })),
-        h('g', { className: 'wb-atelier-walker is-room' }, h(AtelierFigure, { x: 770, y: 248, tone: 'is-idle', scale: 1.05 })),
+        h('g', { className: 'wb-atelier-walker is-room' }, h(OfficePixelPerson, { x: 770, y: 248, tone: 'is-idle', scale: 1.05, walking: true })),
         room.projects.map(renderRoomDesk),
         coffeeCorner,
         h('text', { className: 'wb-atelier-room-note', x: 44, y: 570 }, tr('sceneStudioSpatialNote')))
@@ -6948,13 +7464,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('small', null, String(room.projects.length) + ' ' + tr('sceneStudioDeskCount'))),
           h('div', { className: 'wb-atelier-tabs', role: 'tablist', 'aria-label': tr('sceneStudioFloor') },
             roomTabs.map((item) => h('button', {
-              key: item.id, type: 'button', role: 'tab', 'aria-selected': item.id === room.id,
+              key: item.id, type: 'button', role: 'tab', 'aria-selected': item.id === room.id, 'aria-label': item.label, title: item.label,
               className: cx(item.id === room.id && 'is-current'),
               onClick: () => guardClick(() => setRoomId(item.id)),
-            }, item.code)))),
+            }, item.code))),
+          h('button', { type: 'button', className: 'wb-scene-details-toggle', 'aria-expanded': inspectorOpen, onClick: () => setInspectorOpen((open) => !open) }, tr(inspectorOpen ? 'sceneHideDetails' : 'sceneShowDetails'))),
         h('div', { className: 'wb-atelier-scene is-room' }, renderRoom())) : null
 
-      return h('div', { className: cx('wb-studio', 'wb-scene-enter', room && 'is-room', entering && 'is-entering') },
+      return h('div', { className: cx('wb-studio', 'wb-scene-enter', room && 'is-room', entering && 'is-entering', !inspectorOpen && 'is-inspector-collapsed') },
         h('header', { className: 'wb-studio-top' },
           h('div', { className: 'wb-studio-brand' },
             h('span', { className: 'wb-studio-mark' }, h(Glyph, { name: 'grid', size: 18 })),
@@ -6972,6 +7489,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 h('span', null, tr('sceneStudioKicker')),
                 h('b', null, room ? room.label : tr('sceneStudioOverview'))),
               h('span', { className: 'wb-studio-stage-count' }, String(visibleProjects.length), ' ', tr('projects'), ' · ', String(rooms.length), ' ', tr('sceneStudioRoomsCount')),
+              h('button', { type: 'button', className: 'wb-scene-details-toggle', 'aria-expanded': inspectorOpen, onClick: () => setInspectorOpen((open) => !open) }, tr(inspectorOpen ? 'sceneHideDetails' : 'sceneShowDetails')),
               h('div', { className: 'wb-studio-zoom', role: 'group', 'aria-label': tr('sceneStudioZoom') },
                 h('button', { type: 'button', onClick: () => updateZoom(-0.1), 'aria-label': tr('sceneStudioZoom') + ' −' }, '−'),
                 h('span', null, Math.round(cameraState.z * 100) + '%'),
@@ -7998,7 +8516,36 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', { className: 'wb-cap-handoff-meta' }, h('span', null, memoryState?.updatedAt ? fmtDateTime(memoryState.updatedAt) : '—'), h('span', null, handoffHistory?.[0]?.status || tr('capNoHandoffStatus')))) : h('p', { className: 'wb-cap-empty' }, tr('capNoHandoff'))))
     }
 
-    function ProjectWorkspace({ project, projects, allSessions, sessionSources, scene, tr, initialTab = 'overview', onTabChange, onClose, onSave, onOpen, onSelect, onHandoff, onLinkFolder, onUnlinkFolder, onOpenSession, onForkSession, onLinkSession, onUnlinkSession, onMarkFollowup, onSetLifecycle, onSetSessionPolicy, notify }) {
+    function workspaceOriginLabel(scene) {
+      if (scene === 'earth') return 'sceneEarth'
+      if (scene === 'studio') return 'sceneStudio'
+      if (scene === 'library') return 'sceneLibrary'
+      return null
+    }
+
+    function WorkspaceOriginMark({ scene }) {
+      const shared = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.1, opacity: .75 }
+      let drawing = null
+      if (scene === 'earth') drawing = h('g', shared,
+        h('circle', { cx: 110, cy: 80, r: 54 }),
+        h('ellipse', { cx: 110, cy: 80, rx: 23, ry: 54 }),
+        h('ellipse', { cx: 110, cy: 80, rx: 54, ry: 19 }),
+        h('path', { d: 'M62 55 Q110 69 158 55 M62 105 Q110 91 158 105' }),
+        h('ellipse', { cx: 110, cy: 80, rx: 95, ry: 38, transform: 'rotate(-18 110 80)', strokeDasharray: '3 6', opacity: .6 }))
+      else if (scene === 'studio') drawing = h('g', shared,
+        h('path', { d: 'M22 35 H198 V125 H22 Z M22 64 H198 M75 35 V125 M148 35 V125' }),
+        h('rect', { x: 36, y: 77, width: 25, height: 16 }), h('rect', { x: 90, y: 78, width: 25, height: 16 }),
+        h('rect', { x: 119, y: 78, width: 19, height: 16 }), h('rect', { x: 160, y: 76, width: 26, height: 18 }),
+        h('path', { d: 'M39 47 H57 M88 48 H130 M161 47 H184 M39 107 H59 M94 107 H136 M163 108 H183' }))
+      else if (scene === 'library') drawing = h('g', shared,
+        h('path', { d: 'M22 126 V45 Q22 27 40 27 H180 Q198 27 198 45 V126 M22 126 H198' }),
+        h('path', { d: 'M40 47 H180 M40 84 H180 M40 121 H180' }),
+        [48, 60, 72, 89, 101, 119, 132, 150, 163].map((x, index) => h('path', { key: x, d: `M${x} 52 v27 M${x + 3} 89 v27`, opacity: .6 + (index % 2) * .3 })))
+      if (!drawing) return null
+      return h('svg', { className: 'wb-field-origin', viewBox: '0 0 220 160', 'aria-hidden': 'true', focusable: 'false' }, drawing)
+    }
+
+    function ProjectWorkspace({ project, projects, allSessions, sessionSources, scene, tr, initialTab = 'overview', onTabChange, onClose, onSave, onOpen, onSelect, onHandoff, onLinkFolder, onUnlinkFolder, onOpenSession, onForkSession, onLinkSession, onUnlinkSession, onMarkFollowup, onSetLifecycle, onSetSessionPolicy, notify, exitGuardRef }) {
       const [tab, setTab] = useState(['overview', 'capability', 'outputs', 'sessions', 'settings'].includes(initialTab) ? initialTab : 'overview')
       const taskStarter = tr('wsTaskStarter')
       const [note, setNote] = useState(project.note || '')
@@ -8012,7 +8559,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const [pinned, setPinned] = useState(Boolean(project.pinned))
       const [hidden, setHidden] = useState(Boolean(project.hidden))
       const [saving, setSaving] = useState(false)
-      const [saved, setSaved] = useState(false)
+      const [savedSnapshot, setSavedSnapshot] = useState(null)
       const [folderPath, setFolderPath] = useState('')
       const [folderRole, setFolderRole] = useState('reference')
       const [folderBusy, setFolderBusy] = useState(false)
@@ -8029,6 +8576,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const sectionRef = useRef(null)
       const leavingRef = useRef(false)
       const zoomBackRef = useRef(false)
+      // Updated on every render so a save cannot silently discard edits made
+      // while its request is in flight.
+      const workspaceEditSnapshotRef = useRef('')
+      workspaceEditSnapshotRef.current = JSON.stringify([project.id, note, tags, status, pinned, hidden, lifecycle, intent, taskDraft])
+      const workspaceSaveFields = { id: project.id, note, tags, status, pinned, hidden }
+      const workspaceSaveFieldsRef = useRef('')
+      workspaceSaveFieldsRef.current = workspaceSaveSnapshot(workspaceSaveFields)
+      const saved = workspaceSaveIsCurrent(savedSnapshot, workspaceSaveFields)
       const [zoomingBack, setZoomingBack] = useState(false)
       const candidates = useMemo(() => (allSessions || [])
         .filter((session) => !session.projectId)
@@ -8038,9 +8593,9 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         ['DSH', sessionSources?.dsh], ['Codex', sessionSources?.codex],
       ].filter(([, source]) => source && source.available === false), [sessionSources])
       useEffect(() => {
-        setTab(initialTab || 'overview'); setNote(project.note || ''); setTags((project.tags || []).join(', ')); setStatus(project.status || 'unknown'); setPinned(Boolean(project.pinned)); setHidden(Boolean(project.hidden)); setSaved(false); leavingRef.current = false; zoomBackRef.current = false; setZoomingBack(false)
+        setTab(initialTab || 'overview'); setNote(project.note || ''); setTags((project.tags || []).join(', ')); setStatus(project.status || 'unknown'); setPinned(Boolean(project.pinned)); setHidden(Boolean(project.hidden)); setSavedSnapshot(null); leavingRef.current = false; zoomBackRef.current = false; setZoomingBack(false)
         setLifecycle(project.lifecycle || 'unclassified'); setIntent(project.identity?.intent || ''); setLifecycleBusy(false)
-        setFolderPath(''); setFolderRole('reference'); setFolderBusy(false); setSessionPick(''); setSessionBusy(false); setProjectSkills([]); setSkillsScan('idle')
+        setFolderPath(''); setFolderRole('reference'); setFolderBusy(false); setSessionPick(''); setSessionBusy(false); setProjectSkills([]); setSkillsScan('idle'); setTaskDraft(taskStarter); setTaskOpen(false)
         const id = window.setTimeout(() => titleRef.current?.focus({ preventScroll: true }), 20)
         return () => window.clearTimeout(id)
       }, [project.id])
@@ -8155,11 +8710,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const normalizedTags = tags.split(',').map((x) => x.trim()).filter(Boolean)
       const dirty = note !== (project.note || '') || tags !== (project.tags || []).join(', ') || status !== (project.status || 'unknown') || pinned !== Boolean(project.pinned) || hidden !== Boolean(project.hidden)
       const persist = useCallback(async (patch = {}) => {
+        const snapshot = workspaceSaveSnapshot({ id: project.id, note, tags, status, pinned, hidden })
         setSaving(true)
         try {
           const result = await onSave(project.id, { note, tags: normalizedTags, status, pinned, hidden, ...patch })
           if (result?.ok === false) return false
-          setSaved(true); window.setTimeout(() => setSaved(false), 1800)
+          setSavedSnapshot(snapshot)
+          if (workspaceSaveFieldsRef.current === snapshot) notify?.(tr('savedToast'))
+          window.setTimeout(() => setSavedSnapshot((current) => current === snapshot ? null : current), 1800)
           return true
         } catch (error) {
           notify?.(`${tr('saveFailed')}：${error?.message || error}`)
@@ -8178,13 +8736,33 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           return true
         } catch (error) { notify?.(`${tr('roomLifecycleFailed')}：${error?.message || error}`); return false } finally { setLifecycleBusy(false) }
       }, [onSetLifecycle, project.id, lifecycle, intent, tr, notify])
+      const intentDirty = intent !== (project.identity?.intent || '')
+      const taskDirty = taskDraft !== taskStarter
+      const pendingChanges = dirty || intentDirty || taskDirty
+      const saveBeforeLeaving = useCallback(async () => {
+        const snapshot = workspaceEditSnapshotRef.current
+        const unchanged = () => workspaceEditSnapshotRef.current === snapshot
+        const result = await savePendingWorkspaceChanges({
+          taskDirty, confirmDiscard: () => window.confirm(tr('wsDiscardTaskConfirm')), dirty, save, intentDirty, saveLifecycle, unchanged,
+        })
+        if (!result && !unchanged()) notify?.(tr('wsChangedDuringSave'))
+        return result
+      }, [taskDirty, dirty, intentDirty, save, saveLifecycle, tr, notify])
+      useEffect(() => {
+        if (!exitGuardRef) return undefined
+        const guard = { dirty: pendingChanges, save: saveBeforeLeaving }
+        exitGuardRef.current = guard
+        return () => { if (exitGuardRef.current === guard) exitGuardRef.current = null }
+      }, [exitGuardRef, pendingChanges, saveBeforeLeaving])
+      useEffect(() => {
+        if (!pendingChanges) return undefined
+        const warn = (event) => { event.preventDefault(); event.returnValue = '' }
+        window.addEventListener('beforeunload', warn)
+        return () => window.removeEventListener('beforeunload', warn)
+      }, [pendingChanges])
       const leave = useCallback(async () => {
-        if (leavingRef.current) return false
-        leavingRef.current = true
-        if (dirty && !(await save())) { leavingRef.current = false; return false }
-        onClose()
-        return true
-      }, [dirty, save, onClose])
+        return attemptWorkspaceLeave(leavingRef, pendingChanges, saveBeforeLeaving, onClose)
+      }, [pendingChanges, saveBeforeLeaving, onClose])
       const pullBack = useCallback(async () => {
         if (zoomBackRef.current || leavingRef.current) return
         zoomBackRef.current = true
@@ -8368,14 +8946,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         const onKey = (event) => {
           const target = event.target
           const typing = target && target.closest && target.closest('input,textarea,select,[contenteditable="true"]')
-          if (event.key === 'Escape') {
-            if (document.querySelector('[role="dialog"][aria-modal="true"]')) return
-            if (taskOpen) { event.preventDefault(); setTaskOpen(false); return }
-            if (typing) return
-            event.preventDefault()
-            onClose?.()
-            return
-          }
+          if (handleWorkspaceEscape(event, { taskOpen, setTaskOpen, leave })) return
           if (typing || event.metaKey || event.ctrlKey || event.altKey) return
           const index = Number(event.key)
           if (index >= 1 && index <= chapters.length) {
@@ -8392,13 +8963,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
-      }, [taskOpen, onClose, tab])
+      }, [taskOpen, leave, tab])
       const memoryState = memory?.state || null
       const memoryPath = memory?.paths?.doc || (project.path ? `${project.path}\\.dsh\\handoff\\PROJECT_STATE.md` : '')
       const memoryUpdated = memoryState?.updatedAt ? relTime(memoryState.updatedAt, tr) : ''
-      return h('section', { ref: sectionRef, className: cx('wb-ws wb-room wb-field', zoomingBack && 'is-zooming-back'), 'aria-labelledby': 'wb-ws-title', style: { '--wb-room-accent': projectAccent(project) } },
+      const originLabel = workspaceOriginLabel(scene)
+      return h('section', { ref: sectionRef, className: cx('wb-ws wb-room wb-field', originLabel && `is-origin-${scene}`, zoomingBack && 'is-zooming-back'), 'aria-labelledby': 'wb-ws-title', style: { '--wb-room-accent': projectAccent(project) } },
         h('div', { className: 'wb-room-top' },
-          h('button', { className: 'wb-room-back', onClick: leave, title: tr('roomWheelBackTitle') }, h(Glyph, { name: 'arrow', size: 14 }), tr(scene === 'library' ? 'sceneBackLibrary' : scene === 'studio' ? 'sceneStudioBackStudio' : scene === 'time' ? 'sceneBackTime' : fromEarthLanding ? 'roomBackDetail' : 'sceneBackEarth')),
+          h('button', { className: 'wb-room-back', onClick: leave, title: tr('roomWheelBackTitle') }, h(Glyph, { name: 'arrow', size: 14 }), tr(sceneBackLabel(scene, fromEarthLanding))),
           scene === 'earth' ? h('span', { className: 'wb-room-wheel-hint' }, h(Glyph, { name: 'mouse', size: 12 }), tr(fromEarthLanding ? 'roomWheelBack' : 'roomWheelBackEarth')) : null,
           h('div', { className: 'wb-room-crumb' },
             h(Glyph, { name: 'chevron', size: 10 }),
@@ -8420,11 +8992,12 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               h('span', { className: 'wb-field-media-mark' }, projectMark(project)),
               h('span', { className: 'wb-field-media-word' }, 'FIELD')),
           h('div', { className: 'wb-field-wash' }),
+          h(WorkspaceOriginMark, { scene }),
           h('div', { className: 'wb-room-identity wb-field-copy' },
             h('div', { className: 'wb-room-kicker wb-field-kicker' },
               h('span', { className: 'wb-room-mark' }, projectMark(project)),
               h('span', null, tr('roomKicker')),
-              h('span', { className: 'wb-field-index' }, 'PROJECT / FIELD')),
+              h('span', { className: cx('wb-field-index', originLabel && 'is-origin') }, originLabel ? tr(originLabel) : 'PROJECT / FIELD')),
             h('h1', { id: 'wb-ws-title', className: 'wb-room-title', 'data-wb-morph-title': '1', tabIndex: -1, ref: titleRef }, project.displayName || project.name),
             h('div', { className: 'wb-room-path', title: project.path }, project.path),
             h('div', { className: 'wb-room-chips' },
@@ -9006,7 +9579,9 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const [sourceFilter, setSourceFilter] = useState('all')
       const [workspaceFilter, setWorkspaceFilter] = useState('all')
       const [sort, setSort] = useState('recent')
-      const [view, setView] = useState('earth')
+      const [scenePreferences, setScenePreferences] = useState(() => readScenePreferences(sceneStorage()))
+      const [sceneStorageError, setSceneStorageError] = useState(false)
+      const [view, setView] = useState(() => scenePreferences.start)
       const [earthActiveId, setEarthActiveId] = useState('')
       const [libraryQuery, setLibraryQuery] = useState('')
       const [libraryShelf, setLibraryShelf] = useState('all')
@@ -9021,12 +9596,28 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const [selected, setSelected] = useState(null)
       const [route, setRoute] = useState({ name: 'index', projectId: null, tab: 'overview' })
       const routeRef = useRef(route)
+      const exitGuardRef = useRef(null)
+      const skipGuardPopRef = useRef(false)
+      const projectSwitchRef = useRef(false)
+      const historySnapshotRef = useRef(null)
+      const popControllerRef = useRef(null)
+      const applyPopRef = useRef(null)
+      const trRef = useRef(tr)
+      trRef.current = tr
       const previousRouteRef = useRef(route.name)
       const originRef = useRef(null)
       const returnRef = useRef(history.state?.wbWallReturn
         ? { scrollTop: Number(history.state.wbWallReturn.scrollTop) || 0, projectId: history.state.wbWallReturn.projectId || '' }
         : { scrollTop: 0, projectId: '' })
       const restoreRef = useRef(null)
+      useEffect(() => {
+        try {
+          if (!history.state?.wbAtlasHistory) {
+            history.replaceState({ ...(history.state || {}), wbAtlasHistory: { session: `${Date.now()}-${Math.random()}`, index: 0 } }, '')
+          }
+          historySnapshotRef.current = { state: history.state, url: location.href }
+        } catch { /* history support is optional */ }
+      }, [])
       const [handoff, setHandoff] = useState(null)
       const [handoffLoading, setHandoffLoading] = useState(false)
       const [selectionMode, setSelectionMode] = useState(false)
@@ -9113,7 +9704,6 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           setSelected((s) => s && s.id === id ? { ...s, ...projectView } : s)
           // Notes are workbench-local annotations. Never mirror them into the
           // project directory; opening an AI session is the only handoff path.
-          notify(tr('savedToast'))
           return { ok: true, localOnly: true }
         } catch (e) { notify(tr('saveFailed') + ': ' + e.message); return { ok: false, error: e.message } }
       }, [tr, notify])
@@ -9535,7 +10125,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       }, [])
       const closeProject = useCallback(() => {
         if (history.state?.dshWorkbench?.entry === 'wall') {
-          try { history.back(); return } catch { /* fall through */ }
+          try { skipGuardPopRef.current = true; history.back(); return } catch { skipGuardPopRef.current = false }
         }
         finishCloseProject()
       }, [finishCloseProject])
@@ -9546,7 +10136,10 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         setRoute(next)
         routeRef.current = next
         if (history.state?.dshWorkbench) {
-          try { history.replaceState({ ...history.state, dshWorkbench: { ...history.state.dshWorkbench, tab } }, '') } catch { /* history is optional */ }
+          try {
+            history.replaceState({ ...history.state, dshWorkbench: { ...history.state.dshWorkbench, tab } }, '')
+            historySnapshotRef.current = { state: history.state, url: location.href }
+          } catch { /* history is optional */ }
         }
       }, [])
       const openProject = useCallback((project, tab = 'overview') => {
@@ -9575,10 +10168,13 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           if (current.name === 'index') {
             history.replaceState({ ...(history.state || {}), wbWallReturn: { ...returnRef.current } }, '')
           }
-          const previousEntry = history.state?.dshWorkbench?.entry
-          const state = { ...(history.state || {}), dshWorkbench: { projectId: project.id, tab: 'overview', entry: current.name === 'index' ? 'wall' : (previousEntry || 'direct') } }
-          if (current.name === 'project' && current.projectId === project.id) history.replaceState(state, '')
+          const state = projectHistoryState(history.state, next, current)
+          const replace = current.name === 'project' && current.projectId === project.id
+          const marker = history.state?.wbAtlasHistory
+          if (marker && Number.isInteger(marker.index)) state.wbAtlasHistory = { ...marker, index: marker.index + (replace ? 0 : 1) }
+          if (replace) history.replaceState(state, '')
           else history.pushState(state, '')
+          historySnapshotRef.current = { state: history.state, url: location.href }
         } catch { /* local navigation still works without History API */ }
         const commit = () => {
           setSelected(project)
@@ -9597,11 +10193,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           } catch { commit(); clearSource() }
         } else { commit(); clearSource() }
       }, [])
+      const openRelatedProject = useCallback((project, tab = 'overview') => {
+        if (!project || project.id === routeRef.current.projectId) { openProject(project, tab); return }
+        void guardProjectSwitch(projectSwitchRef, exitGuardRef.current, () => window.confirm(tr('wsLeaveConfirm')), () => openProject(project, tab))
+      }, [openProject, tr])
       useEffect(() => {
-        const fn = (event) => {
-          const state = event.state?.dshWorkbench
+        applyPopRef.current = (entryState) => {
+          historySnapshotRef.current = { state: entryState, url: location.href }
+          const state = entryState?.dshWorkbench
           if (!state?.projectId) {
-            const wallReturn = event.state?.wbWallReturn
+            const wallReturn = entryState?.wbWallReturn
             if (wallReturn) {
               returnRef.current = wallReturn
               restoreRef.current = wallReturn
@@ -9615,6 +10216,17 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           const next = { name: 'project', projectId: project.id, tab: state.tab || 'overview' }
           setRoute(next)
           routeRef.current = next
+        }
+        if (!popControllerRef.current) popControllerRef.current = createProjectPopGuard({
+          history,
+          getCurrent: () => ({ route: routeRef.current, ...historySnapshotRef.current }),
+          getGuard: () => exitGuardRef.current,
+          confirm: () => window.confirm(trRef.current('wsLeaveConfirm')),
+          apply: (state) => applyPopRef.current?.(state),
+        })
+        const fn = (event) => {
+          if (skipGuardPopRef.current) { skipGuardPopRef.current = false; applyPopRef.current?.(event.state); return }
+          void popControllerRef.current(event.state)
         }
         window.addEventListener('popstate', fn)
         return () => window.removeEventListener('popstate', fn)
@@ -9725,10 +10337,17 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const cleanup = useMemo(() => [...top].filter((p) => p.status === 'archived' && p.deletable !== false).sort((a, b) => (b.sizeBytes || 0) - (a.sizeBytes || 0)).slice(0, 6), [top])
       const focus = useMemo(() => [...top].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.lastActivity || 0) - new Date(a.lastActivity || 0)).slice(0, 4), [top])
 
-      const sceneMode = route.name === 'index' && tab === 'projects' && ['earth', 'studio', 'library', 'time'].includes(view)
-      const activeScene = SCENE_REGISTRY.find((item) => item.id === view) || null
+      const activeScene = findScene(view)
+      const sceneMode = sceneModeFor(route, tab, activeScene)
+      const visibleScenes = scenePreferences.order.filter((id) => !scenePreferences.hidden.includes(id)).map((id) => findScene(id)).filter(Boolean)
+      const updateScenePreferences = (value) => {
+        const next = normalizeScenePreferences(value)
+        setScenePreferences(next)
+        setSceneStorageError(!writeScenePreferences(sceneStorage(), next))
+        if (findScene(view) && next.hidden.includes(view)) setView(next.start)
+      }
       const goScene = (next) => {
-        if (!next) return
+        if (!canNavigateToView(next)) return
         if (next !== view) {
           if (mainRef.current) mainRef.current.scrollTop = 0
           setView(next)
@@ -9754,14 +10373,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       if (loading && !data) return h('div', { className: 'wb-root' }, h('style', null, CSS), h('div', { className: 'wb-shell' }, h('div', { className: 'wb-skeleton' }), h('div', { className: 'wb-skeleton' }), h('div', { className: 'wb-skeleton' })))
 
       const scanning = Boolean(data?.scanning)
-      return h('div', { className: cx('wb-root', sceneMode && 'is-scene-mode', route.name === 'index' && view === 'earth' && 'is-earth-scene', route.name === 'index' && view === 'studio' && 'is-studio-scene', route.name === 'index' && view === 'library' && 'is-library-scene', route.name === 'index' && view === 'time' && 'is-time-scene') },
+      return h('div', { className: cx('wb-root', sceneMode && 'is-scene-mode', route.name === 'index' && activeScene && `is-${activeScene.id}-scene`) },
         h('style', null, CSS),
         route.name === 'index' ? h('header', { className: cx('wb-header', tab === 'projects' && 'has-modebar') },
           h('div', { className: 'wb-header-inner' },
             h('div', { className: 'wb-brand' },
               h('div', { className: 'wb-brand-mark' }, h(WorkbenchGlyph, { size: 21 })),
               h('div', { style: { minWidth: 0 } },
-                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.0.1')),
+                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.1.0')),
                 h('div', { className: 'wb-subtitle' }, tr('subtitle')))),
             h('div', { className: 'wb-header-spacer' }),
             h('div', { className: 'wb-scan-state' },
@@ -9775,18 +10394,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           tab === 'projects' ? h('div', { className: 'wb-modebar' },
             h('div', { className: 'wb-modebar-inner' },
               h('span', { className: 'wb-modebar-kicker' }, tr('earthSceneSwitch')),
-              h(SceneSwitch, { current: sceneMode ? view : '', onScene: goScene, tr, variant: 'dock' }),
-              h('span', { className: 'wb-modebar-note' },
-                h('i', null),
-                sceneMode && activeScene ? tr(activeScene.labelKey) : tr('sceneDockNote')))) : null) : null,
+              h(SceneSwitch, { current: sceneMode ? view : '', onScene: goScene, tr, variant: 'dock', scenes: visibleScenes }),
+              h(SceneSettings, { value: scenePreferences, onChange: updateScenePreferences, tr, storageError: sceneStorageError }))) : null) : null,
         h('div', { className: 'wb-main', ref: mainRef },
           route.name === 'project' && selected ? h(ProjectWorkspace, {
             key: selected.id,
             project: all.find((p) => p.id === selected.id) || selected, projects: all, allSessions, sessionSources: data.sessionSources, scene: view, tr, onClose: closeProject,
-            onSave: saveProject, onOpen: openPath, onSelect: openProject, onHandoff: openProjectHandoff, initialTab: route.tab || 'overview', onTabChange: selectWorkspaceTab,
+            onSave: saveProject, onOpen: openPath, onSelect: openRelatedProject, onHandoff: openProjectHandoff, initialTab: route.tab || 'overview', onTabChange: selectWorkspaceTab,
             onLinkFolder: linkFolder, onUnlinkFolder: unlinkFolder, onOpenSession: openSession, onForkSession: forkSession,
             onLinkSession: linkSession, onUnlinkSession: unlinkSession, onMarkFollowup: markFollowup,
-            onSetLifecycle: saveProjectIdentity, onSetSessionPolicy: saveProjectIdentity, notify,
+            onSetLifecycle: saveProjectIdentity, onSetSessionPolicy: saveProjectIdentity, notify, exitGuardRef,
           }) : h('div', { className: 'wb-shell' },
             error ? h('div', { className: 'wb-error' }, h(Glyph, { name: 'alert', size: 15 }), error, h('button', { className: 'wb-btn ghost', onClick: () => load() }, tr('retry'))) : null,
             data && !data.ready ? h('div', { className: 'wb-panel', style: { padding: '40px 20px' } },
@@ -9831,8 +10448,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                     h('option', { value: 'name' }, tr('sortName')),
                     h('option', { value: 'created' }, tr('sortCreated'))),
                   h('div', { className: 'wb-seg' },
-                    view === 'earth' || view === 'library' || view === 'studio' || view === 'time' ? null : h('button', { onClick: () => setView('earth') }, h(Glyph, { name: 'globe', size: 13 }), tr('earthTitle')),
-                    view === 'earth' || view === 'library' || view === 'studio' || view === 'time' ? null : h('button', { onClick: () => setView('library') }, h(Glyph, { name: 'library', size: 13 }), tr('libraryScene')),
+                    activeScene ? null : h('button', { onClick: () => setView('earth') }, h(Glyph, { name: 'globe', size: 13 }), tr('earthTitle')),
+                    activeScene ? null : h('button', { onClick: () => setView('library') }, h(Glyph, { name: 'library', size: 13 }), tr('libraryScene')),
                     h('button', { className: cx(view === 'board' && 'on'), onClick: () => setView('board') }, h(Glyph, { name: 'grid', size: 13 }), tr('boardView')),
                     h('button', { className: cx(view === 'cards' && 'on'), onClick: () => setView('cards') }, h(Glyph, { name: 'layers', size: 13 }), tr('cards')),
                     h('button', { className: cx(view === 'table' && 'on'), onClick: () => setView('table') }, h(Glyph, { name: 'list', size: 13 }), tr('table'))),
@@ -9871,33 +10488,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                       projects: displayed, tr, onSelect: openProject, selectionMode,
                       selectedIds: selectedSet, onToggle: toggleSelection,
                     })
-                  : view === 'earth'
-                    ? h(EarthView, {
-                        projects: displayed, activeId: earthActiveId, tr,
-                        onActive: setEarthActiveId, onOpen: openProject, onOpenPath: openPath,
-                        onRefresh: () => load(true), onScene: goScene,
-                      })
-                  : view === 'studio'
-                    ? h(StudioView, {
-                        projects: displayed, activeId: earthActiveId, tr,
-                        onActive: setEarthActiveId, onOpen: openProject, onOpenPath: openPath,
-                        onRefresh: () => load(true), onScene: goScene,
-                        query: studioQuery, setQuery: setStudioQuery,
-                        roomId: studioRoom, setRoomId: setStudioRoom,
-                        camera: studioCamera, setCamera: setStudioCamera,
-                      })
-                  : view === 'library'
-                    ? h(LibraryView, {
-                        projects: displayed, activeId: earthActiveId, tr,
-                        onActive: setEarthActiveId, onOpen: openProject, onOpenPath: openPath,
-                        onScene: goScene, query: libraryQuery, setQuery: setLibraryQuery, shelf: libraryShelf, setShelf: setLibraryShelf,
-                      })
-                  : view === 'time'
-                    ? h(TimeView, {
-                        projects: displayed, activeId: earthActiveId, tr,
-                        onActive: setEarthActiveId, onOpen: openProject, onOpenPath: openPath,
-                        onRefresh: () => load(true), onScene: goScene,
-                        query: timeQuery, setQuery: setTimeQuery, bucket: timeBucket, setBucket: setTimeBucket,
+                  : activeScene
+                    ? renderScene(activeScene, {
+                        common: {
+                          projects: displayed, activeId: earthActiveId, tr,
+                          onActive: setEarthActiveId, onOpen: openProject, onOpenPath: openPath,
+                          onRefresh: () => load(true), onScene: goScene,
+                        },
+                        studio: { query: studioQuery, setQuery: setStudioQuery, roomId: studioRoom, setRoomId: setStudioRoom, camera: studioCamera, setCamera: setStudioCamera },
+                        library: { query: libraryQuery, setQuery: setLibraryQuery, shelf: libraryShelf, setShelf: setLibraryShelf },
+                        time: { query: timeQuery, setQuery: setTimeQuery, bucket: timeBucket, setBucket: setTimeBucket },
                       })
                   : view === 'board'
                     ? h(ProjectBoard, {
@@ -9951,6 +10551,35 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         buildHandoffPrompt,
         filterHandoffCorrections,
         DICT,
+      }
+      window.__DSH_WORKBENCH_TEST__.scenes = {
+        registry: SCENE_REGISTRY,
+        findScene,
+        sceneModeFor,
+        sceneBackLabel,
+        renderScene,
+        SceneSwitch,
+        workspaceOriginLabel,
+        WorkspaceOriginMark,
+        canNavigateToView,
+        projectHistoryState,
+        workspaceSaveSnapshot,
+        workspaceSaveIsCurrent,
+        attemptWorkspaceLeave,
+        savePendingWorkspaceChanges,
+        guardProjectSwitch,
+        handleWorkspaceEscape,
+        createProjectPopGuard,
+        SceneSettings,
+        normalizeScenePreferences,
+        readScenePreferences,
+        writeScenePreferences,
+        studioRooms,
+        studioDeskLayout,
+        STUDIO_ROOM_CAPACITY,
+        libraryPage,
+        libraryShelf,
+        LIBRARY_PAGE_SIZE,
       }
     }
 
