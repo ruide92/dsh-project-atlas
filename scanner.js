@@ -174,7 +174,7 @@ export async function collectCandidates(root, maxDepth, warnings, config = DEFAU
     const info = detectMarkers(entries)
     const primary = info.markers.some((m) => PRIMARY_MANIFESTS.has(m) || SOLUTION_EXT.some((x) => m.toLowerCase().endsWith(x)))
     const assetContainer = (config.assetContainerMarkers || []).some((name) => entries.some((e) => e.isFile() && e.name === name))
-    if (assetContainer) {
+    if (assetContainer && dir !== rootAbs) {
       out.push({
         path: dir,
         depth,
@@ -199,7 +199,7 @@ export async function collectCandidates(root, maxDepth, warnings, config = DEFAU
       }
     }
     const isCandidate = info.hasGit || info.hasDsh || primary
-    if (isCandidate && !assetContainer) {
+    if (isCandidate && !assetContainer && dir !== rootAbs) {
       out.push({
         path: dir,
         depth,
