@@ -1,5 +1,7 @@
 # Project Atlas — 可视化项目工作台
 
+![Project Atlas 地球场景](assets/screenshots/atlas-earth.png)
+
 Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目、技能、Codex / DSH 会话、运行状态与产出，收进一个可缩放的项目工作台。它默认只读，不会替你改写项目；是否把项目交给 Agent，由你在项目页里明确操作。
 
 版本变化请查看 [更新日志](CHANGELOG.md)。
@@ -10,11 +12,20 @@ Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目
 - 运行状态、产物预览、磁盘与 AI 软件概览
 - 本地优先：没有账号、没有云端同步、没有遥测
 
+<p align="center">
+  <img src="assets/screenshots/atlas-studio.png" alt="Project Atlas 工作室场景：按项目生命周期分配工位" width="49%">
+  <img src="assets/screenshots/atlas-timeline.png" alt="Project Atlas 时间庭场景：按最近活动查看项目年轮" width="49%">
+</p>
+
+> 截图使用内置合成数据，不含真实项目、用户名或本机路径。
+
 ## 安装
 
 ### 从 DSH 插件市场安装
 
 在 DSH 的插件市场搜索 **Project Atlas** 或 **项目工作台**，安装后按桌面端提示重启。
+
+市场页：https://awesome-dsh-plugin.com/p/ruide92/dsh-project-atlas/
 
 > 市场条目需要维护者合并并重建目录；如果暂时搜索不到，请使用下面的手动安装。仓库和 Release 已经可直接下载。
 
