@@ -15,6 +15,7 @@ import { loadConfig } from './config.js'
 import { buildDigest } from './digest.js'
 import { readTruthDocs } from './truth-docs.js'
 import { buildProjectView, projectStats } from './project-model.js'
+import { annotateProjects, tidySummary } from './project-consolidation.js'
 import { normalizeFollowups, recordDiscovery, markFollowup, followupInfo, followupSummary } from './followup.js'
 import { configureSkillRoots, scanSkills, getSkillDetail, isSkillPath } from './skills.js'
 import { configureCodexDb, listCodexSessions, findCodexSession, readCodexDigest, codexSessionOpenUrl } from './codex-sessions.js'
@@ -133,7 +134,11 @@ function normalizeEarthAnchor(value) {
 function presentProject(p) {
   const c = curationFor(p)
   const o = overrideFor(p)
-  const name = (o && o.name) || (c && c.name) || p.displayName || p.name
+  // A human-readable name can come from three places, in this order:
+  // explicit local rename, curated catalog, then a README/package display name.
+  // The folder name is the last resort, never the primary identity.
+  const name = (o && o.name) || (c && c.name) || p.autoTitle || p.displayName || p.name
+  const nameSource = o && o.name ? 'manual' : c && c.name ? 'curated' : p.autoTitle ? 'auto' : 'folder'
   const nativeNote = typeof p.handoff?.note === 'string' ? p.handoff.note.trim() : ''
   // Workbench notes are local annotations. A local note always wins; a
   // project's own handoff note is only shown read-only until the user edits it.
@@ -188,6 +193,7 @@ function presentProject(p) {
     ...p,
     ...follow,
     displayName: name,
+    nameSource,
     name: p.name,
     note,
     noteSource: (o && Object.prototype.hasOwnProperty.call(o, 'note')) ? 'local' : (nativeNote ? 'project' : (c && c.note ? 'curated' : 'none')),
@@ -221,10 +227,10 @@ function presentProject(p) {
 function presentCatalog(sessions = []) {
   if (!catalog) return null
   loadCuration()
-  const projects = buildProjectView(catalog.projects, overrides, sessions, {
+  const projects = annotateProjects(buildProjectView(catalog.projects, overrides, sessions, {
     workspaceNames: appConfig.workspaceNames,
     noisePatterns: appConfig.noisePatterns,
-  }).map(presentProject)
+  }).map(presentProject))
   const assigned = new Map()
   for (const project of projects) {
     for (const session of project.sessions || []) {
@@ -241,6 +247,7 @@ function presentCatalog(sessions = []) {
     ...catalog.stats,
     ...projectStats(projects),
     lifecycle: lifecycleStats(projects),
+    tidy: tidySummary(projects),
     followupPending: followup.pending,
     totalBytesAll: projects.reduce((a, p) => a + (p.sizeBytes || 0), 0),
   }
@@ -1096,8 +1103,12 @@ async function handleProjectFolders(req, res) {
   }
   const project = findCatalogProject(body.id)
   if (!project) { sendJson(res, 404, { ok: false, error: 'unknown project' }); return }
-  if (!String(body.path || '').trim()) { sendJson(res, 400, { ok: false, error: '缺少目录路径' }); return }
-  const target = path.resolve(String(body.path || ''))
+  const rawPath = String(body.path || '').trim()
+  if (!rawPath) { sendJson(res, 400, { ok: false, error: '缺少目录路径' }); return }
+  // Resolve only after checking the original value: path.resolve() would turn
+  // a relative path into an absolute one and silently bypass this guard.
+  if (!path.isAbsolute(rawPath)) { sendJson(res, 400, { ok: false, error: '必须是绝对路径' }); return }
+  const target = path.resolve(rawPath)
   const current = Array.isArray(overrides[project.id]?.folders) ? overrides[project.id].folders : []
   if (req.method === 'DELETE') {
     const next = current.filter((item) => normalizeKey(typeof item === 'string' ? item : item?.path) !== normalizeKey(target))
@@ -1147,6 +1158,121 @@ async function handleProjectFolders(req, res) {
   overrides[project.id] = { ...(overrides[project.id] || {}), folders: next }
   await saveOverrides()
   sendJson(res, 200, { ok: true, folders: next })
+}
+
+async function handleProjectMerge(req, res) {
+  if (req.method !== 'POST') { sendJson(res, 405, { ok: false, error: 'method not allowed' }); return }
+  if (!sameOrigin(req)) { sendJson(res, 403, { ok: false, error: 'origin rejected' }); return }
+  let body
+  try { body = await readBody(req) } catch (error) {
+    sendJson(res, 400, { ok: false, error: error?.message || '请求格式错误' })
+    return
+  }
+  const target = findCatalogProject(body.targetId)
+  const source = findCatalogProject(body.sourceId)
+  if (!target || !source) { sendJson(res, 404, { ok: false, error: 'unknown project' }); return }
+  if (!target.path || !source.path || !path.isAbsolute(String(target.path)) || !path.isAbsolute(String(source.path))) {
+    sendJson(res, 400, { ok: false, error: '待合并项目缺少绝对目录' })
+    return
+  }
+  if (target.id === source.id) { sendJson(res, 400, { ok: false, error: '不能把项目合并到自己' }); return }
+  if (isSameOrInside(target.path, source.path) || isSameOrInside(source.path, target.path)) {
+    sendJson(res, 400, { ok: false, error: '父子目录不能作为重复项目合并' })
+    return
+  }
+  const targetOverride = overrides[target.id] && typeof overrides[target.id] === 'object' ? overrides[target.id] : {}
+  const sourceOverride = overrides[source.id] && typeof overrides[source.id] === 'object' ? overrides[source.id] : {}
+  if (targetOverride.mergedInto) { sendJson(res, 409, { ok: false, error: '这个项目已经合并到别的项目了' }); return }
+  if (sourceOverride.mergedInto) { sendJson(res, 409, { ok: false, error: '这个项目已经合并过了' }); return }
+
+  const normalizeEntry = (item) => {
+    const rawPath = typeof item === 'string' ? item : item?.path
+    if (!rawPath) return null
+    if (!path.isAbsolute(String(rawPath))) return null
+    const absolute = path.resolve(String(rawPath))
+    const role = FOLDER_ROLES.has(String(typeof item === 'object' ? item?.role : ''))
+      ? String(item.role)
+      : 'reference'
+    return { path: absolute, role }
+  }
+  const targetFolders = (Array.isArray(targetOverride.folders) ? targetOverride.folders : [])
+    .map(normalizeEntry)
+    .filter(Boolean)
+  const sourceFolders = (Array.isArray(sourceOverride.folders) ? sourceOverride.folders : [])
+    .map(normalizeEntry)
+    .filter(Boolean)
+  const seen = new Set([normalizeKey(target.path), ...targetFolders.map((item) => normalizeKey(item.path))])
+  const additions = []
+  for (const item of [{ path: path.resolve(source.path), role: 'code' }, ...sourceFolders]) {
+    const key = normalizeKey(item.path)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    additions.push(item)
+  }
+  if (targetFolders.length + additions.length > 8) {
+    sendJson(res, 400, { ok: false, error: '合并后目录超过 8 个，请先移除部分关联目录' })
+    return
+  }
+  for (const item of additions) {
+    if (!path.isAbsolute(item.path)) { sendJson(res, 400, { ok: false, error: '项目目录必须是绝对路径' }); return }
+    if (!isSameOrInside(item.path, target.path)) {
+      const blocked = protectedReason(item.path)
+      if (blocked) { sendJson(res, 403, { ok: false, error: blocked }); return }
+    }
+    try {
+      const stat = await fs.lstat(item.path)
+      if (stat.isSymbolicLink()) throw new Error('不允许合并符号链接或目录联接')
+      if (!stat.isDirectory()) throw new Error('不是目录')
+      if (await hasSymlinkComponent(path.parse(item.path).root, item.path)) {
+        throw new Error('路径包含符号链接或目录联接，已拒绝合并')
+      }
+    } catch (error) {
+      sendJson(res, 404, { ok: false, error: `无法合并目录：${error?.message || '目录不存在'}` })
+      return
+    }
+  }
+
+  const mergedSessions = []
+  const sessionKeys = new Set()
+  const sessionItems = [
+    ...(Array.isArray(targetOverride.sessions) ? targetOverride.sessions : []),
+    ...(Array.isArray(sourceOverride.sessions) ? sourceOverride.sessions : []),
+  ]
+  for (const item of sessionItems) {
+    const id = typeof item === 'string' ? item : item?.id
+    const sourceName = typeof item === 'object' && item?.source === 'codex' ? 'codex' : 'dsh'
+    if (!id) continue
+    const key = `${sourceName}:${id}`
+    if (sessionKeys.has(key)) continue
+    sessionKeys.add(key)
+    mergedSessions.push({ id: String(id), source: sourceName })
+  }
+  const mergedTags = [...new Set([
+    ...(Array.isArray(targetOverride.tags) ? targetOverride.tags : []),
+    ...(Array.isArray(sourceOverride.tags) ? sourceOverride.tags : []),
+  ].map((tag) => String(tag).trim()).filter(Boolean))].slice(0, 12)
+  const next = {
+    ...targetOverride,
+    folders: [...targetFolders, ...additions],
+    tags: mergedTags,
+  }
+  if (mergedSessions.length) next.sessions = mergedSessions
+  if (!next.intent && sourceOverride.intent) next.intent = String(sourceOverride.intent).slice(0, 2000)
+  if (!next.note && sourceOverride.note) next.note = String(sourceOverride.note).slice(0, 16000)
+  if ((!next.lifecycle || next.lifecycle === 'unclassified') && sourceOverride.lifecycle) next.lifecycle = sourceOverride.lifecycle
+  if (!next.sessionPolicy && sourceOverride.sessionPolicy) next.sessionPolicy = sourceOverride.sessionPolicy
+  if (!next.earthAnchor && sourceOverride.earthAnchor) next.earthAnchor = sourceOverride.earthAnchor
+  const mergedFrom = [...new Set([...(Array.isArray(next.mergedFrom) ? next.mergedFrom : []), source.id])].slice(-50)
+  next.mergedFrom = mergedFrom
+
+  overrides[target.id] = next
+  overrides[source.id] = {
+    ...sourceOverride,
+    mergedInto: target.id,
+    mergedAt: new Date().toISOString(),
+  }
+  await saveOverrides()
+  sendJson(res, 200, { ok: true, targetId: target.id, sourceId: source.id, folders: next.folders })
 }
 
 async function sessionExists(sessionId) {
@@ -2740,6 +2866,7 @@ export function apply(ctx) {
       route('/dsh-workbench/api/open-data', handleOpenData)
       route('/dsh-workbench/api/path-status', handlePathStatus)
       route('/dsh-workbench/api/project-folders', handleProjectFolders)
+      route('/dsh-workbench/api/project-merge', handleProjectMerge)
       route('/dsh-workbench/api/project-sessions', handleProjectSessions)
       route('/dsh-workbench/api/project-handoff', handleProjectHandoff)
       route('/dsh-workbench/api/inherit', handleInherit)

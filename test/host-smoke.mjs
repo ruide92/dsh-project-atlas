@@ -12,6 +12,8 @@ const linkedRoot = path.join(tmp, 'linked')
 const secondLinkedRoot = path.join(tmp, 'second-linked')
 const conventionRoot = path.resolve('..', `.wb-convention-${process.pid}`)
 const normalLinkedRoot = path.resolve('..', `.wb-normal-linked-${process.pid}`)
+const mergeTargetRoot = path.resolve('..', `.wb-merge-main-${process.pid}`)
+const mergeSourceRoot = path.resolve('..', `.wb-merge-source-${process.pid}`)
 const codexDb = path.join(tmp, 'codex-state.sqlite')
 const codexLog = path.join(tmp, 'codex-rollout.jsonl')
 await fs.writeFile(codexLog, [
@@ -34,7 +36,7 @@ codexSeed.prepare(`INSERT INTO threads VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).r
 codexSeed.close()
 process.env.DSH_WORKBENCH_CODEX_DB = codexDb
 process.on('exit', () => {
-  for (const target of [fixture, conventionRoot, normalLinkedRoot, tmp]) {
+  for (const target of [fixture, conventionRoot, normalLinkedRoot, mergeTargetRoot, mergeSourceRoot, tmp]) {
     try { rmSync(target, { recursive: true, force: true }) } catch { /* best effort */ }
   }
 })
@@ -43,6 +45,8 @@ await fs.mkdir(path.join(linkedRoot, 'output'), { recursive: true })
 await fs.mkdir(path.join(secondLinkedRoot, 'output'), { recursive: true })
 await fs.mkdir(path.join(conventionRoot, 'output'), { recursive: true })
 await fs.mkdir(path.join(normalLinkedRoot, 'output'), { recursive: true })
+await fs.mkdir(path.join(mergeTargetRoot, 'output'), { recursive: true })
+await fs.mkdir(path.join(mergeSourceRoot, 'output'), { recursive: true })
 await fs.writeFile(path.join(fixture, 'output', 'result.png'), Buffer.from('89504e470d0a1a0a', 'hex'))
 await fs.writeFile(path.join(fixture, 'output', 'main-only.png'), Buffer.from('main only'))
 await fs.writeFile(path.join(linkedRoot, 'output', 'result.png'), Buffer.from('linked image'))
@@ -104,6 +108,18 @@ await fs.writeFile(path.join(tmp, 'catalog.json'), JSON.stringify({
     id: 'p3', name: 'convention-project', displayName: 'Convention Project',
     path: conventionRoot, drive: 'C:', group: 'fixture', markers: [], hasGit: false, hasDsh: false,
     codeFiles: 0, sizeBytes: 10, fileCount: 1,
+    created: '2026-01-01T00:00:00.000Z', lastActivity: new Date().toISOString(),
+    status: 'active', sources: ['folder'], childrenCount: 0, topLevel: true,
+  }, {
+    id: 'p4', name: 'merge-target', displayName: 'Merge Target',
+    path: mergeTargetRoot, drive: 'C:', group: 'merge', markers: ['package.json'], hasGit: false, hasDsh: false,
+    codeFiles: 1, sizeBytes: 10, fileCount: 1,
+    created: '2026-01-01T00:00:00.000Z', lastActivity: new Date().toISOString(),
+    status: 'active', sources: ['folder'], childrenCount: 0, topLevel: true,
+  }, {
+    id: 'p5', name: 'merge-source', displayName: 'Merge Source',
+    path: mergeSourceRoot, drive: 'C:', group: 'merge', markers: ['package.json'], hasGit: false, hasDsh: false,
+    codeFiles: 1, sizeBytes: 10, fileCount: 1,
     created: '2026-01-01T00:00:00.000Z', lastActivity: new Date().toISOString(),
     status: 'active', sources: ['folder'], childrenCount: 0, topLevel: true,
   }],
@@ -267,7 +283,7 @@ const nonImage = await call('GET', '/dsh-workbench/api/artifact?id=p2&path=workb
 if (nonImage.status !== 415) throw new Error(`artifact mime guard failed: ${nonImage.status} ${JSON.stringify(nonImage.body)}`)
 
 const health = await call('GET', '/dsh-workbench/api/health')
-if (health.status !== 200 || health.body.version !== 12 || health.body.routes !== 24 || health.body.hasCodexSessions !== true || health.body.sessionSources !== true) throw new Error(`health version failed: ${JSON.stringify(health.body)}`)
+if (health.status !== 200 || health.body.version !== 12 || health.body.routes !== 25 || health.body.hasCodexSessions !== true || health.body.sessionSources !== true) throw new Error(`health version failed: ${JSON.stringify(health.body)}`)
 for (const asset of ['/dsh-workbench/assets/earth-blue-marble.jpg', '/dsh-workbench/assets/earth-night.jpg']) {
   if (!routes.has(asset)) throw new Error(`earth asset route missing: ${asset}`)
 }
@@ -515,6 +531,18 @@ const crossPort = await call('POST', '/dsh-workbench/api/handoffs', { projectId:
 if (crossPort.status !== 403) throw new Error('cross-port handoff POST was not rejected')
 const otherLoopback = await call('POST', '/dsh-workbench/api/handoffs', { projectId: 'x' }, 'http://localhost:64382')
 if (otherLoopback.status !== 403) throw new Error('loopback alias was treated as same-origin')
+
+const merged = await call('POST', '/dsh-workbench/api/project-merge', { targetId: 'p4', sourceId: 'p5' })
+if (merged.status !== 200) throw new Error(`project merge failed: ${merged.status} ${JSON.stringify(merged.body)}`)
+const mergedState = await call('GET', '/dsh-workbench/api/state')
+const mergedTarget = mergedState.body.projects?.find((project) => project.id === 'p4')
+if (!mergedTarget?.folders?.some((folder) => folder.path === mergeSourceRoot)) {
+  throw new Error(`merged source folder missing from target: ${JSON.stringify(mergedTarget)}`)
+}
+const mergedSource = mergedState.body.projects?.find((project) => project.id === 'p5')
+if (mergedSource && mergedSource.topLevel !== false) throw new Error('merged source still appears as a project')
+const mergedOverride = JSON.parse(await fs.readFile(path.join(tmp, 'overrides.json'), 'utf8'))
+if (mergedOverride.p5?.mergedInto !== 'p4') throw new Error('merged source was not recorded')
 
 console.log('host smoke ok', { routes: [...routes.keys()].length, saved: saved.length, pathStatus: status.body })
 await fs.rm(tmp, { recursive: true, force: true })

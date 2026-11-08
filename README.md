@@ -8,6 +8,8 @@ Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目
 
 - 四个场景：地球、工作室、图书馆、时间庭
 - 项目总览、生命周期与本地备注
+- 可读项目名与一句说明；重复项目可确认合并
+- “整理项目”集中处理久未活动、缺少说明和重复候选
 - SKILL.md 图谱、DSH / Codex 会话索引
 - 运行状态、产物预览、磁盘与 AI 软件概览
 - 本地优先：没有账号、没有云端同步、没有遥测
@@ -15,6 +17,10 @@ Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目
 <p align="center">
   <img src="assets/screenshots/atlas-studio.png" alt="Project Atlas 工作室场景：按项目生命周期分配工位" width="49%">
   <img src="assets/screenshots/atlas-timeline.png" alt="Project Atlas 时间庭场景：按最近活动查看项目年轮" width="49%">
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/atlas-tidy.png" alt="Project Atlas 整理项目：合并重复、隐藏久未活动项目" width="80%">
 </p>
 
 > 截图使用内置合成数据，不含真实项目、用户名或本机路径。
@@ -58,6 +64,14 @@ dsh plugin --profile <profile> add github:ruide92/dsh-project-atlas
 ```
 
 保存后回到工作台，点击“重新扫描”。
+
+## 整理项目和合并重复
+
+项目页顶部的“整理项目”会集中列出三类内容：重复候选、超过 90 天没有活动的项目、以及仍缺少一句说明的项目。
+
+- 重复候选必须由你确认后才会合并。合并会把另一个项目的目录、会话关联和标签并入当前项目，原项目只是隐藏，不会删除磁盘文件。
+- 久未活动的项目可以点“不再显示”，之后在项目列表的“显示隐藏”里恢复。
+- 在项目设置里可以修改显示名称，并填写“这是什么项目”；名称保存为工作台本地覆盖，不修改项目目录。
 
 ### 配置项
 

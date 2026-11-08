@@ -243,6 +243,9 @@ function firstParagraph(text) {
 async function describeProject(dir, markers) {
   const notes = []
   const pkg = markers.includes('package.json') ? await readJson(path.join(dir, 'package.json')) : null
+  const packageName = String(pkg?.name || '').trim().slice(0, 200)
+  const packageTitle = String(pkg?.displayName || pkg?.productName || '').trim().slice(0, 120)
+  let readmeTitle = ''
   if (pkg?.description) notes.push(String(pkg.description))
   const py = markers.includes('pyproject.toml') ? await readText(path.join(dir, 'pyproject.toml'), 12000) : ''
   if (py) {
@@ -252,6 +255,17 @@ async function describeProject(dir, markers) {
   for (const name of ['README.md', 'README.zh.md', 'README.zh-CN.md', 'readme.md', 'README.txt']) {
     const text = await readText(path.join(dir, name), 16000)
     if (text) {
+      const heading = (text.match(/^#\s+(.+)$/m) || [])[1]
+      if (heading) {
+        const clean = String(heading)
+          .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+          .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+          .replace(/[*_`~]/g, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        if (clean && clean.length <= 80 && !/^(readme|read me|项目|项目说明|documentation|docs?)$/i.test(clean)) readmeTitle = clean
+      }
       const p = firstParagraph(text)
       if (p) { notes.push(p); break }
     }
@@ -269,7 +283,11 @@ async function describeProject(dir, markers) {
     const v = String(n).replace(/\s+/g, ' ').trim()
     if (v && !unique.some((x) => x.toLowerCase() === v.toLowerCase())) unique.push(v)
   }
-  return unique.join(' · ').slice(0, 600)
+  return {
+    summary: unique.join(' · ').slice(0, 600),
+    packageName,
+    autoTitle: packageTitle || readmeTitle,
+  }
 }
 
 async function projectIdentity(dir) {
@@ -466,7 +484,8 @@ async function scanProjects(config, warnings) {
     if (!st) continue
     const git = await gitInfo(c.path)
     const stats = await dirStats(c.path, config)
-    const summary = await describeProject(c.path, c.markers)
+    const described = await describeProject(c.path, c.markers)
+    const summary = described.summary
     const handoff = await projectHandoffInfo(c.path)
     const identity = await projectIdentity(c.path)
     const rootMtime = st.mtimeMs ? new Date(st.mtimeMs).toISOString() : null
@@ -497,6 +516,8 @@ async function scanProjects(config, warnings) {
       created,
       lastActivity,
       summary,
+      packageName: described.packageName,
+      autoTitle: described.autoTitle,
       languages: languageTags(c.markers),
       kind: classifyKind(name, c.markers, summary),
     })

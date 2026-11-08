@@ -205,9 +205,55 @@ window.__ModuleLoader__.load({
         roomLifecycleFailed: '项目归类保存失败',
         identityTitle: '项目身份',
         identitySub: '只保存在工作台本地，不会改写项目文件。',
+        identityName: '项目名称',
+        identityNamePlaceholder: '给这个项目起一个人能看懂的名字',
+        identityNameHint: '留空会尝试使用 README 标题；再留空则显示文件夹名。',
+        identityWhat: '这是什么项目',
+        identityWhatPlaceholder: '例如：一个统计彩票开奖结果的小程序，每周还会用。',
         identityIntent: '为什么长期维护',
         identityIntentPlaceholder: '例如：这是一个会持续迭代的编剧工作室，不是一次生成任务。',
         identityManifest: '项目清单（只读）',
+        identityAutoTitle: '自动识别',
+        identityFolderName: '文件夹名',
+        duplicateTitle: '疑似重复项目',
+        duplicateSub: '这些目录可能属于同一个项目。合并只是把目录关联进来，不会删除或移动任何文件。',
+        duplicateMerge: '合并到此项目',
+        duplicateMergeConfirm: '把「{name}」合并到「{target}」？只建立目录关联，不会删除文件。',
+        duplicateMerged: '已合并；原目录仍保留，随时可以取消关联。',
+        duplicateMergeFailed: '合并失败',
+        duplicateReasonSameRemote: '同一个 Git 仓库',
+        duplicateReasonSamePackage: '同一个包名',
+        duplicateReasonSameName: '同名副本',
+        duplicateReasonSimilarName: '名称相近',
+        duplicateReasonSameSummary: '说明相同',
+        duplicateReasonSimilarSummary: '说明相近',
+        duplicateReasonSameDisplayName: '显示名相同',
+        tidyTitle: '整理项目',
+        tidySub: '先处理重复、久未活动和缺少说明的项目；不会自动删除任何东西。',
+        tidyOpen: '整理',
+        tidyEmpty: '暂时没有需要整理的项目。',
+        tidyDuplicates: '重复候选',
+        tidyDormant: '久未活动',
+        tidyMissingIntent: '缺少一句说明',
+        tidyDormantHint: '超过 90 天没有活动。可以标为临时、归档，或保留。',
+        tidyMissingIntentHint: '名字还是英文文件夹名，打开设置补一句“这是什么项目”。',
+        tidyOpenSettings: '去设置',
+        tidyHide: '不再显示',
+        tidyHideConfirm: '不再显示「{name}」？项目文件不会被删除，之后可在“显示隐藏”里恢复。',
+        tidyMergeTo: '合并到「{name}」',
+        tidyMergeIntoThis: '把另一个合并到这里',
+        tidyMergeKeep: '建议保留',
+        tidyMergeReverse: '反过来合并',
+        tidyMergeMeta: '{activity} · {sessions} 个会话 · {folders} 个目录',
+        tidyMergeChoose: '选择保留哪个项目',
+        tidyDormantDays: '{n} 天没有活动',
+        tidyDormantMissing: '{n} 天没有活动 · 还缺一句说明',
+        tidyClose: '关闭',
+        activityFresh: '最近有活动',
+        activityWarm: '本月有活动',
+        activityStale: '一个月没动',
+        activityDormant: '很久没动',
+        activityUnknown: '活动时间未知',
         identityNoManifest: '项目没有清单；工作台只读识别，不会创建。',
         integrationTitle: '项目接入',
         integrationSub: '声明写在项目自己的 workbench.project.json；工作台据此判断能帮到哪一层。',
@@ -1017,9 +1063,55 @@ window.__ModuleLoader__.load({
         roomLifecycleFailed: 'Could not save classification',
         identityTitle: 'Project identity',
         identitySub: 'Stored only in the workbench; project files are never modified.',
+        identityName: 'Project name',
+        identityNamePlaceholder: 'Give this project a name a human can understand',
+        identityNameHint: 'Leave empty to try the README title; if that is empty too, the folder name is shown.',
+        identityWhat: 'What this project is',
+        identityWhatPlaceholder: 'e.g. a small lottery-result checker used every week.',
         identityIntent: 'Why this is long-term',
         identityIntentPlaceholder: 'e.g. a screenwriting studio that keeps evolving, not a one-off generation task.',
         identityManifest: 'Project manifest (read-only)',
+        identityAutoTitle: 'Auto-detected',
+        identityFolderName: 'Folder name',
+        duplicateTitle: 'Possible duplicates',
+        duplicateSub: 'These folders may be the same project. Merging only links the folder; no file is deleted or moved.',
+        duplicateMerge: 'Merge into this project',
+        duplicateMergeConfirm: 'Merge “{name}” into “{target}”? This only links the folders and never deletes files.',
+        duplicateMerged: 'Merged. The original folder is still there and can be unlinked at any time.',
+        duplicateMergeFailed: 'Could not merge',
+        duplicateReasonSameRemote: 'Same Git repository',
+        duplicateReasonSamePackage: 'Same package name',
+        duplicateReasonSameName: 'Same name after copy suffix',
+        duplicateReasonSimilarName: 'Similar name',
+        duplicateReasonSameSummary: 'Same description',
+        duplicateReasonSimilarSummary: 'Similar description',
+        duplicateReasonSameDisplayName: 'Same display name',
+        tidyTitle: 'Tidy projects',
+        tidySub: 'Review duplicates, dormant work and projects without a description. Nothing is deleted automatically.',
+        tidyOpen: 'Tidy',
+        tidyEmpty: 'Nothing needs tidying right now.',
+        tidyDuplicates: 'Duplicate candidates',
+        tidyDormant: 'Dormant',
+        tidyMissingIntent: 'Missing a description',
+        tidyDormantHint: 'No activity for over 90 days. Mark temporary, archive, or keep it.',
+        tidyMissingIntentHint: 'The name is still an English folder name. Open Settings and add “what this is”.',
+        tidyOpenSettings: 'Open settings',
+        tidyHide: 'Hide for now',
+        tidyHideConfirm: 'Hide “{name}”? Project files are not deleted; you can restore it with “Show hidden”.',
+        tidyMergeTo: 'Merge into “{name}”',
+        tidyMergeIntoThis: 'Merge the other one here',
+        tidyMergeKeep: 'Keep this one',
+        tidyMergeReverse: 'Merge the other way',
+        tidyMergeMeta: '{activity} · {sessions} sessions · {folders} folders',
+        tidyMergeChoose: 'Choose which project to keep',
+        tidyDormantDays: 'No activity for {n} days',
+        tidyDormantMissing: 'No activity for {n} days · still needs a one-line description',
+        tidyClose: 'Close',
+        activityFresh: 'Active recently',
+        activityWarm: 'Active this month',
+        activityStale: 'Untouched for a month',
+        activityDormant: 'Dormant',
+        activityUnknown: 'Activity unknown',
         identityNoManifest: 'No manifest; the workbench only reads it and never creates one.',
         integrationTitle: 'Project integration',
         integrationSub: 'The declaration lives in the project’s own workbench.project.json; it tells the workbench which layer it can act on.',
@@ -2098,6 +2190,26 @@ window.__ModuleLoader__.load({
         : source === 'manifest' ? tr('lifecycleManifest')
         : source === 'handoff' ? tr('lifecycleHandoff')
         : tr('lifecycleInferred')
+    }
+    function duplicateReasonLabel(reason, tr) {
+      const key = {
+        sameRemote: 'duplicateReasonSameRemote',
+        samePackage: 'duplicateReasonSamePackage',
+        sameName: 'duplicateReasonSameName',
+        similarName: 'duplicateReasonSimilarName',
+        sameSummary: 'duplicateReasonSameSummary',
+        similarSummary: 'duplicateReasonSimilarSummary',
+        sameDisplayName: 'duplicateReasonSameDisplayName',
+      }[reason]
+      return key ? tr(key) : reason
+    }
+    function activityLabel(project, tr) {
+      const key = project?.activityBand === 'fresh' ? 'activityFresh'
+        : project?.activityBand === 'warm' ? 'activityWarm'
+        : project?.activityBand === 'stale' ? 'activityStale'
+        : project?.activityBand === 'dormant' ? 'activityDormant'
+        : 'activityUnknown'
+      return tr(key)
     }
     const prefersReducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)
     function useCountUp(value, duration = 620) {
@@ -4041,6 +4153,45 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
 .wb-field-label{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--dsw-alias-label-tertiary);margin-top:2px}
 .wb-life-settings-foot{display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--dsw-alias-border-l1);padding-top:7px;font-size:9px;line-height:1.45;color:var(--dsw-alias-label-tertiary)}
 .wb-life-settings-foot code{font-family:var(--wb-mono,ui-monospace,SFMono-Regular,Consolas,monospace);font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-dimmed)}
+.wb-duplicate-card{border-color:color-mix(in srgb,var(--dsw-alias-brand-primary) 28%,var(--dsw-alias-border-l1));background:color-mix(in srgb,var(--dsw-alias-brand-primary) 4%,var(--dsw-alias-bg-layer-1))}
+.wb-dup-list{display:flex;flex-direction:column;gap:7px}
+.wb-dup-row{display:flex;align-items:center;gap:10px;border-top:1px solid var(--dsw-alias-border-l1);padding-top:8px}
+.wb-dup-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.wb-dup-name{font-size:11px;font-weight:600;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-dup-path{font-family:var(--wb-mono,ui-monospace,SFMono-Regular,Consolas,monospace);font-size:9px;color:var(--dsw-alias-label-dimmed);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-dup-reasons{display:flex;gap:4px;flex-wrap:wrap}
+.wb-dup-reasons .wb-chip{font-size:9px;padding:2px 6px}
+.wb-tool-count{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;background:color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent);color:var(--dsw-alias-link);font-size:9px;margin-left:2px}
+.wb-tidy-banner{display:flex;align-items:center;gap:12px;border:1px solid color-mix(in srgb,var(--dsw-alias-brand-primary) 30%,var(--dsw-alias-border-l1));border-radius:13px;background:linear-gradient(120deg,color-mix(in srgb,var(--dsw-alias-brand-primary) 8%,var(--dsw-alias-bg-layer-1)),var(--dsw-alias-bg-layer-1));padding:11px 13px;margin:2px 0 4px}
+.wb-tidy-banner-icon{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:color-mix(in srgb,var(--dsw-alias-brand-primary) 12%,transparent);color:var(--dsw-alias-link);flex:0 0 auto}
+.wb-tidy-banner-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.wb-tidy-banner-text b{font-size:11px;color:var(--dsw-alias-label-primary)}
+.wb-tidy-banner-text span{font-size:10px;line-height:1.45;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-tidy-modal{width:min(820px,calc(100vw - 32px));max-height:min(86vh,760px)}
+.wb-tidy-body{overflow:auto;display:flex;flex-direction:column;gap:16px}
+.wb-tidy-section{display:flex;flex-direction:column;gap:7px}
+.wb-tidy-section h3{display:flex;align-items:center;gap:6px;margin:0;font-size:11px;font-weight:600;color:var(--dsw-alias-label-secondary)}
+.wb-tidy-section h3 b{display:inline-grid;place-items:center;min-width:16px;height:16px;border-radius:8px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-tertiary);font-size:9px}
+.wb-tidy-section p{margin:0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-tertiary)}
+.wb-tidy-pair{border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-layer-2);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.wb-tidy-reasons{display:flex;gap:4px;flex-wrap:wrap}
+.wb-tidy-pair-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.wb-tidy-side{display:flex;flex-direction:column;gap:5px;min-width:0;padding:7px 8px;border:1px solid transparent;border-radius:8px}
+.wb-tidy-side.is-keep{border-color:color-mix(in srgb,var(--dsw-alias-brand-primary) 34%,transparent);background:color-mix(in srgb,var(--dsw-alias-brand-primary) 7%,transparent)}
+.wb-tidy-keep-chip{align-self:flex-start;font-size:8px}
+.wb-tidy-side-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wb-tidy-side-main b{font-size:11px;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-tidy-side-main small{font-family:var(--wb-mono,ui-monospace,SFMono-Regular,Consolas,monospace);font-size:8px;color:var(--dsw-alias-label-dimmed);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-tidy-meta{font-size:9px;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-tidy-pair-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.wb-tidy-pair-actions .wb-btn{font-size:9px;padding:5px 8px}
+.wb-tidy-swap{color:var(--dsw-alias-label-dimmed);font-size:13px}
+.wb-tidy-row{display:flex;align-items:center;gap:10px;border-top:1px solid var(--dsw-alias-border-l1);padding-top:6px}
+.wb-tidy-row-main{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.wb-tidy-row-main b{font-size:10px;color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-tidy-row-main small{font-size:9px;color:var(--dsw-alias-label-dimmed);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-tidy-row-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+@media(max-width:640px){.wb-tidy-banner{align-items:flex-start;flex-wrap:wrap}.wb-tidy-banner-text span{white-space:normal}.wb-tidy-pair-grid{grid-template-columns:1fr}.wb-tidy-swap{display:none}.wb-tidy-row{align-items:flex-start;flex-wrap:wrap}.wb-tidy-row-actions{width:100%;justify-content:flex-end}}
 .wb-integration-card{grid-column:1/-1}
 .wb-integration-sub{margin:0;font-size:10px;line-height:1.6;color:var(--dsw-alias-label-tertiary);max-width:78ch}
 .wb-integration-meta{margin-top:10px;grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -8341,7 +8492,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
               h('span', { className: cx('wb-terrain-state', `is-${focusTone}`) }, h('i', null), active.runtime?.state ? tr(RUNTIME_STATE_KEYS[active.runtime.state] || 'runtimeUnknown') : statusLabel(active.status, tr))))))
     }
 
-    function ProjectBoard({ projects, tr, onSelect, onFollowup, onShowAll }) {
+    function ProjectBoard({ projects, tr, onSelect, onFollowup, onShowAll, tidyCount = 0, onTidy }) {
       const live = projects.filter((p) => p.status !== 'archived')
       const rank = (p) => p.pinned ? -1 : p.runtime?.state === 'running' ? 0 : p.runtime?.state === 'waiting' ? 1 : p.runtime?.state === 'blocked' || p.runtime?.state === 'failed' ? 2 : p.needsFollowup ? 3 : 4
       const byActivity = (a, b) => activityMs(b.lastActivity) - activityMs(a.lastActivity)
@@ -8403,6 +8554,12 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', null, h('b', null, h(CountUp, { value: persistentWork.length })), h('span', null, tr('lifecyclePersistent'))),
             h('div', null, h('b', null, h(CountUp, { value: pending })), h('span', null, tr('boardAttnPending'))),
             h('div', null, h('b', null, h(CountUp, { value: temporary.length })), h('span', null, tr('wallLifecycleTemporary'))))),
+        tidyCount ? h('section', { className: 'wb-tidy-banner' },
+          h('div', { className: 'wb-tidy-banner-icon' }, h(Glyph, { name: 'spark', size: 16 })),
+          h('div', { className: 'wb-tidy-banner-text' },
+            h('b', null, tr('tidyTitle')),
+            h('span', null, tr('tidySub'))),
+          h('button', { className: 'wb-btn', onClick: onTidy }, tr('tidyOpen'), h('b', null, String(tidyCount)), h(Glyph, { name: 'arrow', size: 12 }))) : null,
         h('div', { className: 'wb-lifecycle-switch', role: 'tablist', 'aria-label': tr('wallLifecycleSummary', {
           p: projectWork.length, i: projectWork.filter((p) => p.lifecycle === 'incubating').length, t: temporary.length, u: inbox.length,
         }) },
@@ -8454,6 +8611,124 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h(Glyph, { name: 'arrow', size: 12 }))))) : null,
         live.length > 19 && scope === 'projects' ? h('button', { className: 'wb-wall-all', onClick: onShowAll },
           h('span', null, tr('wallViewAll', { n: live.length })), h(Glyph, { name: 'arrow', size: 15 })) : null)
+    }
+
+    function TidyDialog({ projects, tr, onClose, onOpen, onMerge, onHide }) {
+      const [busy, setBusy] = useState('')
+      const [error, setError] = useState('')
+      const top = useMemo(() => (projects || []).filter((p) => p.topLevel !== false && !p.hidden && !p.noise && !p.container), [projects])
+      const byId = useMemo(() => new Map(top.map((p) => [p.id, p])), [top])
+      const pairs = useMemo(() => {
+        const seen = new Set()
+        const rows = []
+        for (const project of top) {
+          for (const candidate of project.duplicateCandidates || []) {
+            const other = byId.get(candidate.id)
+            if (!other) continue
+            const key = [project.id, other.id].sort().join('|')
+            if (seen.has(key)) continue
+            seen.add(key)
+            rows.push({ a: project, b: other, score: candidate.score || 0, reasons: candidate.reasons || [] })
+          }
+        }
+        return rows.sort((a, b) => b.score - a.score)
+      }, [top, byId])
+      const pairedIds = useMemo(() => new Set(pairs.flatMap((pair) => [pair.a.id, pair.b.id])), [pairs])
+      const needsIntent = (project) => {
+        if (project.status === 'archived' || project.identity?.intent || project.note) return false
+        return /[A-Za-z]/.test(project.displayName || project.name || '') && !/[\u3400-\u9fff]/.test(project.displayName || project.name || '')
+      }
+      const dormant = useMemo(() => top.filter((p) => !pairedIds.has(p.id) && p.activityBand === 'dormant' && p.status !== 'archived').sort((a, b) => (b.idleDays || 0) - (a.idleDays || 0)).slice(0, 10), [top, pairedIds])
+      const dormantIds = useMemo(() => new Set(dormant.map((project) => project.id)), [dormant])
+      const missing = useMemo(() => top.filter((p) => !pairedIds.has(p.id) && !dormantIds.has(p.id) && needsIntent(p)).slice(0, 10), [top, pairedIds, dormantIds])
+      const merge = async (target, source) => {
+        if (busy || !target || !source) return
+        const confirmed = window.confirm(tr('duplicateMergeConfirm', { name: source.displayName || source.name, target: target.displayName || target.name }))
+        if (!confirmed) return
+        setBusy(source.id)
+        setError('')
+        try {
+          const result = await onMerge(target.id, source.id)
+          if (result?.ok === false) throw new Error(result.error || tr('duplicateMergeFailed'))
+        } catch (err) {
+          setError(err?.message || tr('duplicateMergeFailed'))
+        } finally { setBusy('') }
+      }
+      const hide = async (project) => {
+        if (busy || !onHide) return
+        if (!window.confirm(tr('tidyHideConfirm', { name: project.displayName || project.name }))) return
+        setBusy(project.id)
+        setError('')
+        try {
+          const result = await onHide(project.id)
+          if (result?.ok === false) throw new Error(result.error || tr('saveFailed'))
+        } catch (err) {
+          setError(err?.message || tr('saveFailed'))
+        } finally { setBusy('') }
+      }
+      const copyLike = (project) => /(?:副本|拷贝|备份|旧|old|copy|backup)(?:\s*[（(]?\d*[)）]?)?$/i.test(String(project.displayName || project.name || ''))
+      const keepScore = (project) => {
+        const lifecycleScore = { persistent: 4, incubating: 3, unclassified: 2, temporary: 1 }[project.lifecycle] || 0
+        let score = lifecycleScore * 100
+        if (!copyLike(project)) score += 25
+        if (project.pinned) score += 15
+        if (project.nameSource === 'manual' || project.nameSource === 'curated') score += 10
+        score += Math.min(10, Number(project.sessionCount) || 0) * 2
+        score += Math.min(5, Number(project.folderCount) || 1)
+        return score
+      }
+      const preferredPair = (a, b) => keepScore(a) >= keepScore(b) ? { keep: a, drop: b } : { keep: b, drop: a }
+      const pairSide = (side, keep) => h('div', { className: cx('wb-tidy-side', keep && 'is-keep'), key: side.id },
+        keep ? h('span', { className: 'wb-chip accent wb-tidy-keep-chip' }, tr('tidyMergeKeep')) : null,
+        h('div', { className: 'wb-tidy-side-main' },
+          h('b', null, side.displayName || side.name),
+          h('small', { title: side.path }, side.path)),
+        h('span', { className: 'wb-tidy-meta' }, tr('tidyMergeMeta', {
+          activity: activityLabel(side, tr),
+          sessions: Number(side.sessionCount) || 0,
+          folders: Number(side.folderCount) || 1,
+        })))
+      return h('div', {
+        className: 'wb-modal-backdrop',
+        onMouseDown: (e) => { if (e.target === e.currentTarget && !busy) onClose() },
+      }, h('div', { className: 'wb-modal wb-tidy-modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'wb-tidy-title' },
+        h('div', { className: 'wb-modal-head' },
+          h('div', { style: { flex: 1, minWidth: 0 } },
+            h('div', { className: 'wb-modal-title', id: 'wb-tidy-title' }, tr('tidyTitle')),
+            h('div', { className: 'wb-modal-sub' }, tr('tidySub'))),
+          h('button', { className: 'wb-btn ghost icon', onClick: onClose, disabled: Boolean(busy), 'aria-label': tr('tidyClose') }, h(Glyph, { name: 'close', size: 16 }))),
+        h('div', { className: 'wb-modal-body wb-tidy-body' },
+          error ? h('div', { className: 'wb-error' }, h(Glyph, { name: 'alert', size: 15 }), error) : null,
+          pairs.length ? h('section', { className: 'wb-tidy-section' },
+            h('h3', null, h(Glyph, { name: 'layers', size: 14 }), tr('tidyDuplicates'), h('b', null, String(pairs.length))),
+            pairs.map((pair) => {
+              const choice = preferredPair(pair.a, pair.b)
+              return h('div', { className: 'wb-tidy-pair', key: `${pair.a.id}|${pair.b.id}` },
+                h('div', { className: 'wb-tidy-reasons' }, pair.reasons.map((reason) => h('span', { className: 'wb-chip', key: reason }, duplicateReasonLabel(reason, tr)))),
+                h('div', { className: 'wb-tidy-pair-grid' }, pairSide(choice.keep, true), h('span', { className: 'wb-tidy-swap' }, '←'), pairSide(choice.drop, false)),
+                h('div', { className: 'wb-tidy-pair-actions' },
+                  h('button', { className: 'wb-btn primary', disabled: Boolean(busy), onClick: () => merge(choice.keep, choice.drop) },
+                    busy === choice.drop.id ? tr('saving') : tr('tidyMergeTo', { name: choice.keep.displayName || choice.keep.name })),
+                  h('button', { className: 'wb-btn ghost', disabled: Boolean(busy), onClick: () => merge(choice.drop, choice.keep) },
+                    busy === choice.keep.id ? tr('saving') : tr('tidyMergeReverse'))))
+            })) : null,
+          dormant.length ? h('section', { className: 'wb-tidy-section' },
+            h('h3', null, h(Glyph, { name: 'clock', size: 14 }), tr('tidyDormant'), h('b', null, String(dormant.length))),
+            h('p', null, tr('tidyDormantHint')),
+            dormant.map((project) => h('div', { className: 'wb-tidy-row', key: project.id },
+              h('span', { className: 'wb-tidy-row-main' }, h('b', null, project.displayName || project.name), h('small', null, tr(needsIntent(project) ? 'tidyDormantMissing' : 'tidyDormantDays', { n: project.idleDays || 0 }))),
+              h('span', { className: 'wb-tidy-row-actions' },
+                h('button', { className: 'wb-btn ghost', disabled: Boolean(busy), onClick: () => { onClose(); onOpen(project, 'settings') } }, tr('tidyOpenSettings')),
+                onHide ? h('button', { className: 'wb-btn danger', disabled: Boolean(busy), onClick: () => hide(project) }, busy === project.id ? tr('saving') : tr('tidyHide')) : null)))) : null,
+          missing.length ? h('section', { className: 'wb-tidy-section' },
+            h('h3', null, h(Glyph, { name: 'tag', size: 14 }), tr('tidyMissingIntent'), h('b', null, String(missing.length))),
+            h('p', null, tr('tidyMissingIntentHint')),
+            missing.map((project) => h('div', { className: 'wb-tidy-row', key: project.id },
+              h('span', { className: 'wb-tidy-row-main' }, h('b', null, project.displayName || project.name), h('small', { title: project.path }, project.path)),
+              h('button', { className: 'wb-btn ghost', onClick: () => { onClose(); onOpen(project, 'settings') } }, tr('tidyOpenSettings'))))) : null,
+          !pairs.length && !dormant.length && !missing.length ? h('div', { className: 'wb-empty' }, h('div', { className: 'wb-empty-icon' }, h(Glyph, { name: 'check', size: 20 })), h('div', { className: 'wb-empty-title' }, tr('tidyEmpty'))) : null),
+        h('div', { className: 'wb-modal-foot' },
+          h('button', { className: 'wb-btn ghost', onClick: onClose, disabled: Boolean(busy) }, tr('tidyClose')))))
     }
 
     function ProjectTable({ projects, tr, onSelect, selectionMode, selectedIds, onToggle }) {
@@ -9128,13 +9403,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       return h('svg', { className: 'wb-field-origin', viewBox: '0 0 220 160', 'aria-hidden': 'true', focusable: 'false' }, drawing)
     }
 
-    function ProjectWorkspace({ project, projects, allSessions, sessionSources, scene, tr, initialTab = 'overview', onTabChange, onClose, onSave, onOpen, onSelect, onHandoff, onLinkFolder, onUnlinkFolder, onOpenSession, onForkSession, onLinkSession, onUnlinkSession, onMarkFollowup, onSetLifecycle, onSetSessionPolicy, notify, exitGuardRef }) {
+    function ProjectWorkspace({ project, projects, allSessions, sessionSources, scene, tr, initialTab = 'overview', onTabChange, onClose, onSave, onOpen, onSelect, onHandoff, onLinkFolder, onUnlinkFolder, onMergeDuplicate, onOpenSession, onForkSession, onLinkSession, onUnlinkSession, onMarkFollowup, onSetLifecycle, onSetSessionPolicy, notify, exitGuardRef }) {
       const [tab, setTab] = useState(['overview', 'capability', 'outputs', 'sessions', 'settings'].includes(initialTab) ? initialTab : 'overview')
       const taskStarter = tr('wsTaskStarter')
       const [note, setNote] = useState(project.note || '')
       const [tags, setTags] = useState((project.tags || []).join(', '))
       const [status, setStatus] = useState(project.status || 'unknown')
       const [lifecycle, setLifecycle] = useState(project.lifecycle || 'unclassified')
+      const [name, setName] = useState(project.displayName || '')
       const [intent, setIntent] = useState(project.identity?.intent || '')
       const integration = project.identity?.integration || {}
       const integrationMode = integrationLevel(integration)
@@ -9162,7 +9438,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       // Updated on every render so a save cannot silently discard edits made
       // while its request is in flight.
       const workspaceEditSnapshotRef = useRef('')
-      workspaceEditSnapshotRef.current = JSON.stringify([project.id, note, tags, status, pinned, hidden, lifecycle, intent, taskDraft])
+      workspaceEditSnapshotRef.current = JSON.stringify([project.id, name, note, tags, status, pinned, hidden, lifecycle, intent, taskDraft])
       const workspaceSaveFields = { id: project.id, note, tags, status, pinned, hidden }
       const workspaceSaveFieldsRef = useRef('')
       workspaceSaveFieldsRef.current = workspaceSaveSnapshot(workspaceSaveFields)
@@ -9177,7 +9453,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       ].filter(([, source]) => source && source.available === false), [sessionSources])
       useEffect(() => {
         setTab(initialTab || 'overview'); setNote(project.note || ''); setTags((project.tags || []).join(', ')); setStatus(project.status || 'unknown'); setPinned(Boolean(project.pinned)); setHidden(Boolean(project.hidden)); setSavedSnapshot(null); leavingRef.current = false; zoomBackRef.current = false; setZoomingBack(false)
-        setLifecycle(project.lifecycle || 'unclassified'); setIntent(project.identity?.intent || ''); setLifecycleBusy(false)
+        setLifecycle(project.lifecycle || 'unclassified'); setName(project.displayName || ''); setIntent(project.identity?.intent || ''); setLifecycleBusy(false)
         setFolderPath(''); setFolderRole('reference'); setFolderBusy(false); setSessionPick(''); setSessionBusy(false); setProjectSkills([]); setSkillsScan('idle'); setTaskDraft(taskStarter); setTaskOpen(false)
         const id = window.setTimeout(() => titleRef.current?.focus({ preventScroll: true }), 20)
         return () => window.clearTimeout(id)
@@ -9307,30 +9583,36 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           return false
         } finally { setSaving(false) }
       }, [project.id, note, tags, status, pinned, hidden, onSave, notify, tr])
-      const save = useCallback(() => persist(), [persist])
+      const nameDirty = name.trim() !== String(project.displayName || '').trim()
+      const save = useCallback(() => persist(nameDirty ? { name: name.trim() } : {}), [persist, nameDirty, name])
       const saveLifecycle = useCallback(async (value = lifecycle) => {
         if (!onSetLifecycle) return false
         setLifecycleBusy(true)
         try {
-          const result = await onSetLifecycle(project.id, { lifecycle: value, intent })
+          const payload = { lifecycle: value, intent }
+          // Only persist a rename when the field actually changed. Otherwise a
+          // lifecycle save would freeze the auto-detected README title into a
+          // manual override, and later README edits would stop showing up.
+          if (name.trim() !== String(project.displayName || '').trim()) payload.name = name.trim()
+          const result = await onSetLifecycle(project.id, payload)
           if (result?.ok === false) throw new Error(result.error || tr('roomLifecycleFailed'))
           setLifecycle(value)
           notify?.(tr('roomLifecycleSaved'))
           return true
         } catch (error) { notify?.(`${tr('roomLifecycleFailed')}：${error?.message || error}`); return false } finally { setLifecycleBusy(false) }
-      }, [onSetLifecycle, project.id, lifecycle, intent, tr, notify])
+      }, [onSetLifecycle, project.id, project.displayName, lifecycle, name, intent, tr, notify])
       const intentDirty = intent !== (project.identity?.intent || '')
       const taskDirty = taskDraft !== taskStarter
-      const pendingChanges = dirty || intentDirty || taskDirty
+      const pendingChanges = dirty || intentDirty || nameDirty || taskDirty
       const saveBeforeLeaving = useCallback(async () => {
         const snapshot = workspaceEditSnapshotRef.current
         const unchanged = () => workspaceEditSnapshotRef.current === snapshot
         const result = await savePendingWorkspaceChanges({
-          taskDirty, confirmDiscard: () => window.confirm(tr('wsDiscardTaskConfirm')), dirty, save, intentDirty, saveLifecycle, unchanged,
+          taskDirty, confirmDiscard: () => window.confirm(tr('wsDiscardTaskConfirm')), dirty, save, intentDirty: intentDirty || nameDirty, saveLifecycle, unchanged,
         })
         if (!result && !unchanged()) notify?.(tr('wsChangedDuringSave'))
         return result
-      }, [taskDirty, dirty, intentDirty, save, saveLifecycle, tr, notify])
+      }, [taskDirty, dirty, intentDirty, nameDirty, save, saveLifecycle, tr, notify])
       useEffect(() => {
         if (!exitGuardRef) return undefined
         const guard = { dirty: pendingChanges, save: saveBeforeLeaving }
@@ -9403,6 +9685,20 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           notify?.(tr('folderRemoved'))
         } catch (error) { notify?.(`${tr('folderAddFailed')}：${error?.message || error}`) } finally { setFolderBusy(false) }
       }, [onUnlinkFolder, project.id, notify, tr])
+      const mergeDuplicate = useCallback(async (candidate) => {
+        if (!onMergeDuplicate || !candidate?.path) return
+        const confirmed = window.confirm(tr('duplicateMergeConfirm', {
+          name: candidate.displayName || candidate.name || candidate.path,
+          target: project.displayName || project.name,
+        }))
+        if (!confirmed) return
+        setFolderBusy(true)
+        try {
+          const result = await onMergeDuplicate(project.id, candidate.id)
+          if (result?.ok === false) throw new Error(result.error || tr('duplicateMergeFailed'))
+          notify?.(tr('duplicateMerged'))
+        } catch (error) { notify?.(`${tr('duplicateMergeFailed')}：${error?.message || error}`) } finally { setFolderBusy(false) }
+      }, [onMergeDuplicate, project.id, project.displayName, project.name, notify, tr])
       const linkSession = useCallback(async () => {
         const picked = candidates.find((session) => session.id === sessionPick) || candidates[0]
         if (!picked?.id) return
@@ -9781,16 +10077,34 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                 h('div', { className: 'wb-ws-side-title' }, tr('roomLifecycle'),
                   h('span', { className: cx('wb-chip', `is-lineage-${lifecycle}`), style: { marginLeft: 'auto' } }, lifecycleLabel(lifecycle, tr))),
                 h('p', { className: 'wb-life-settings-sub' }, tr('roomLifecycleSub')),
+                h('label', { className: 'wb-field-label' }, tr('identityName')),
+                h('input', {
+                  className: 'wb-input', style: { width: '100%' }, value: name,
+                  placeholder: project.name || tr('identityNamePlaceholder'),
+                  onChange: (event) => setName(event.target.value),
+                  onKeyDown: (event) => { if (event.key === 'Enter') saveLifecycle(lifecycle) },
+                }),
+                h('div', { className: 'wb-note-local' }, tr('identityNameHint')),
                 h('div', { className: 'wb-life-choices' }, ['persistent', 'incubating', 'temporary', 'unclassified'].map((value) => h('button', {
                   key: value, type: 'button', className: cx('wb-life-choice', `is-${value}`, lifecycle === value && 'on'),
                   onClick: () => saveLifecycle(value), disabled: lifecycleBusy,
                 }, h('i', null), h('span', null, lifecycleLabel(value, tr)), lifecycle === value ? h(Glyph, { name: 'check', size: 11 }) : null))),
-                h('label', { className: 'wb-field-label' }, tr('identityIntent')),
-                h('textarea', { className: 'wb-textarea', rows: 2, value: intent, placeholder: tr('identityIntentPlaceholder'), onChange: (event) => setIntent(event.target.value) }),
-                h('button', { className: 'wb-btn', onClick: () => saveLifecycle(lifecycle), disabled: lifecycleBusy }, lifecycleBusy ? tr('saving') : tr('roomLifecycleSave')),
+                h('label', { className: 'wb-field-label' }, tr('identityWhat')),
+                h('textarea', { className: 'wb-textarea', rows: 2, value: intent, placeholder: tr('identityWhatPlaceholder'), onChange: (event) => setIntent(event.target.value) }),
+                h('button', { className: 'wb-btn', onClick: () => saveLifecycle(lifecycle), disabled: lifecycleBusy || (!intentDirty && !nameDirty) }, lifecycleBusy ? tr('saving') : tr('roomLifecycleSave')),
                 h('div', { className: 'wb-life-settings-foot' },
                   h('span', null, `${lifecycleSourceLabel(project.lifecycleSource, tr)} · ${tr('identitySub')}`),
                   project.identity?.manifest ? h('code', null, `${project.path}\\${project.identity.manifest}`) : h('code', null, tr('identityNoManifest')))),
+              (project.duplicateCandidates || []).length ? h('section', { className: 'wb-ws-settings-card wb-duplicate-card' },
+                h('div', { className: 'wb-ws-side-title' }, tr('duplicateTitle'),
+                  h('span', { className: 'wb-chip accent', style: { marginLeft: 'auto' } }, project.duplicateCandidates.length)),
+                h('p', { className: 'wb-life-settings-sub' }, tr('duplicateSub')),
+                h('div', { className: 'wb-dup-list' }, project.duplicateCandidates.map((candidate) => h('div', { className: 'wb-dup-row', key: candidate.id },
+                  h('div', { className: 'wb-dup-main' },
+                    h('div', { className: 'wb-dup-name' }, candidate.displayName || candidate.name || candidate.id),
+                    h('div', { className: 'wb-dup-path', title: candidate.path }, candidate.path),
+                    h('div', { className: 'wb-dup-reasons' }, (candidate.reasons || []).map((reason) => h('span', { className: 'wb-chip', key: reason }, duplicateReasonLabel(reason, tr))))),
+                  h('button', { className: 'wb-btn', disabled: folderBusy, onClick: () => mergeDuplicate(candidate) }, tr('duplicateMerge')))))) : null,
               h('section', { className: 'wb-ws-settings-card' },
                 h('div', { className: 'wb-ws-side-title' }, tr('status')),
                 h('div', { className: 'wb-status-btns' }, ['active', 'paused', 'archived', 'unknown'].map((value) => h('button', {
@@ -10208,6 +10522,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
       const [deleteOpen, setDeleteOpen] = useState(false)
       const [deleting, setDeleting] = useState(false)
       const [deleteError, setDeleteError] = useState('')
+      const [tidyOpen, setTidyOpen] = useState(false)
       const [toast, setToast] = useState('')
       const toastTimer = useRef(null)
       const mainRef = useRef(null)
@@ -10326,6 +10641,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           })
           const j = await r.json().catch(() => ({}))
           if (!r.ok || j.ok === false) return { ok: false, error: j.error || `HTTP ${r.status}` }
+          if (j.project) {
+            // Apply the returned project immediately so a rename or lifecycle
+            // change is visible without waiting for the next full refresh.
+            setData((d) => {
+              if (!d) return d
+              const projects = d.projects.map((p) => p.id === id ? { ...p, ...j.project } : p)
+              return { ...d, projects, stats: recountProjectStats(projects, d.stats) }
+            })
+            setSelected((s) => s && s.id === id ? { ...s, ...j.project } : s)
+          }
           await load(true)
           return { ok: true, ...j }
         } catch (e) { return { ok: false, error: e.message } }
@@ -10356,6 +10681,16 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         applyLinkedFolders(id, j.folders || [])
         return { ok: true }
       }, [applyLinkedFolders])
+
+      const mergeDuplicate = useCallback(async (targetId, sourceId) => {
+        const r = await fetch(`${API}/project-merge`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ targetId, sourceId }) })
+        const j = await r.json().catch(() => ({}))
+        if (!r.ok || j.ok === false) return { ok: false, error: j.error || `HTTP ${r.status}` }
+        // The host transfers every folder and session link, then rebuilds the
+        // project view. Refresh so the merged-away row disappears immediately.
+        await load(true)
+        return { ok: true }
+      }, [load])
 
       const unlinkFolder = useCallback(async (id, folderPath) => {
         const r = await fetch(`${API}/project-folders`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, path: folderPath }) })
@@ -10991,7 +11326,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', { className: 'wb-brand' },
               h('div', { className: 'wb-brand-mark' }, h(WorkbenchGlyph, { size: 21 })),
               h('div', { style: { minWidth: 0 } },
-                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.3.0')),
+                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.4.0')),
                 h('div', { className: 'wb-subtitle' }, tr('subtitle')))),
             h('div', { className: 'wb-header-spacer' }),
             h('div', { className: 'wb-scan-state' },
@@ -11012,7 +11347,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             key: selected.id,
             project: all.find((p) => p.id === selected.id) || selected, projects: all, allSessions, sessionSources: data.sessionSources, scene: view, tr, onClose: closeProject,
             onSave: saveProject, onOpen: openPath, onSelect: openRelatedProject, onHandoff: openProjectHandoff, initialTab: route.tab || 'overview', onTabChange: selectWorkspaceTab,
-            onLinkFolder: linkFolder, onUnlinkFolder: unlinkFolder, onOpenSession: openSession, onForkSession: forkSession,
+            onLinkFolder: linkFolder, onUnlinkFolder: unlinkFolder, onMergeDuplicate: mergeDuplicate, onOpenSession: openSession, onForkSession: forkSession,
             onLinkSession: linkSession, onUnlinkSession: unlinkSession, onMarkFollowup: markFollowup,
             onSetLifecycle: saveProjectIdentity, onSetSessionPolicy: saveProjectIdentity, notify, exitGuardRef,
           }) : h('div', { className: 'wb-shell' },
@@ -11064,6 +11399,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                     h('button', { className: cx(view === 'board' && 'on'), onClick: () => setView('board') }, h(Glyph, { name: 'grid', size: 13 }), tr('boardView')),
                     h('button', { className: cx(view === 'cards' && 'on'), onClick: () => setView('cards') }, h(Glyph, { name: 'layers', size: 13 }), tr('cards')),
                     h('button', { className: cx(view === 'table' && 'on'), onClick: () => setView('table') }, h(Glyph, { name: 'list', size: 13 }), tr('table'))),
+                  stats.tidy?.total ? h('button', { className: 'wb-btn ghost', onClick: () => setTidyOpen(true), title: tr('tidySub') },
+                    h(Glyph, { name: 'spark', size: 13 }), tr('tidyOpen'), h('b', { className: 'wb-tool-count' }, String(stats.tidy.total))) : null,
                   h('button', {
                     className: cx('wb-btn', selectionMode ? 'primary' : 'ghost'),
                     title: tr('selectHint'),
@@ -11113,6 +11450,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
                   : view === 'board'
                     ? h(ProjectBoard, {
                         projects: displayed, tr, onSelect: openProject,
+                        tidyCount: stats.tidy?.total || 0, onTidy: () => setTidyOpen(true),
                         onFollowup: () => { setFollowOnly(true); setStatusFilter('all'); setSourceFilter('all'); setWorkspaceFilter('all'); setQuery('') },
                         onShowAll: () => { setView('table'); setFollowOnly(false); setStatusFilter('all'); setSourceFilter('all'); setWorkspaceFilter('all'); setQuery('') },
                       })
@@ -11144,6 +11482,14 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           onStart: startHandoff,
           onRecord: recordHandoff,
           onPersist: persistProjectHandoff,
+        }) : null,
+        tidyOpen ? h(TidyDialog, {
+          projects: top,
+          tr,
+          onClose: () => setTidyOpen(false),
+          onOpen: (project, tab) => { setTidyOpen(false); openProject(project, tab) },
+          onMerge: mergeDuplicate,
+          onHide: (id) => saveProjectIdentity(id, { hidden: true }),
         }) : null,
         deleteOpen ? h(DeleteDialog, {
           items: selectedItems,

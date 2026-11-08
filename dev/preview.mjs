@@ -39,8 +39,61 @@ const mock = Array.from({ length: 12 }, (_, i) => ({
   displayName: ['影像实验', '创意档案', '素材工具', '研究笔记', '设计原型', '影像工作流'][i % 6] + ` ${i + 1}`,
   lifecycle: ['persistent', 'incubating', 'temporary'][i % 3], status: 'active', tags: [],
   lastActivity: '2026-10-29T10:00:00Z', created: '2026-01-01T00:00:00Z', sources: [], topLevel: true,
+  activityBand: i === 10 ? 'stale' : 'fresh', idleDays: i === 10 ? 40 : 2,
 }))
-const state = { ok: true, ready: true, projects: mock, software: [], stats: {}, generatedAt: '2026-10-29T10:00:00Z', warnings: [], scanning: false }
+mock.push(
+  {
+    id: 'example-13', name: 'lottery_copy', displayName: '彩票程序', autoTitle: '彩票开奖统计', path: 'F:\\preview\\lottery_copy',
+    lifecycle: 'incubating', status: 'active', tags: [], summary: '统计开奖结果的小程序',
+    lastActivity: '2026-10-27T10:00:00Z', created: '2026-09-01T00:00:00Z', sources: ['dsh'], topLevel: true,
+    activityBand: 'fresh', idleDays: 2, duplicateCount: 1,
+    duplicateCandidates: [{ id: 'example-14', name: 'lottery-old', displayName: '彩票程序（副本）', path: 'F:\\preview\\lottery-old', score: 0.94, reasons: ['samePackage', 'similarName'] }],
+  },
+  {
+    id: 'example-14', name: 'lottery-old', displayName: '彩票程序（副本）', autoTitle: '彩票开奖统计', path: 'F:\\preview\\lottery-old',
+    lifecycle: 'unclassified', status: 'paused', tags: [], summary: '统计开奖结果的小程序',
+    lastActivity: '2026-07-01T10:00:00Z', created: '2026-06-01T00:00:00Z', sources: ['codes'], topLevel: true,
+    activityBand: 'dormant', idleDays: 120, duplicateCount: 1,
+    duplicateCandidates: [{ id: 'example-13', name: 'lottery_copy', displayName: '彩票程序', path: 'F:\\preview\\lottery_copy', score: 0.94, reasons: ['samePackage', 'similarName'] }],
+  },
+  {
+    id: 'example-15', name: 'old-experiment', displayName: 'old-experiment', path: 'F:\\preview\\old-experiment',
+    lifecycle: 'temporary', status: 'active', tags: [], summary: '',
+    lastActivity: '2026-01-04T10:00:00Z', created: '2025-12-01T00:00:00Z', sources: ['codes'], topLevel: true,
+    activityBand: 'dormant', idleDays: 300,
+  },
+)
+const state = {
+  ok: true, ready: true, projects: mock, software: [],
+  stats: { tidy: { duplicateGroups: 1, duplicateProjects: 2, dormantProjects: 2, missingIntent: 1, total: 4 } },
+  generatedAt: '2026-10-29T10:00:00Z', warnings: [], scanning: false,
+}
+function refreshTidy() {
+  const visible = mock.filter((project) => project && project.topLevel !== false && !project.noise && !project.container && !project.hidden)
+  const byId = new Map(visible.map((project) => [project.id, project]))
+  const pairs = new Set()
+  const duplicateIds = new Set()
+  for (const project of visible) {
+    for (const candidate of project.duplicateCandidates || []) {
+      if (!byId.has(candidate.id)) continue
+      pairs.add([project.id, candidate.id].sort().join('|'))
+      duplicateIds.add(project.id)
+      duplicateIds.add(candidate.id)
+    }
+  }
+  const dormantProjects = visible.filter((project) => !duplicateIds.has(project.id) && project.activityBand === 'dormant' && project.status !== 'archived')
+  const dormantIds = new Set(dormantProjects.map((project) => project.id))
+  const dormant = dormantProjects.length
+  const missingIntent = visible.filter((project) => project.status !== 'archived' && !duplicateIds.has(project.id) && !dormantIds.has(project.id) && !project.identity?.intent && !project.note && /[A-Za-z]/.test(project.displayName || project.name || '') && !/[\u3400-\u9fff]/.test(project.displayName || project.name || '')).length
+  state.stats.tidy = {
+    duplicateGroups: pairs.size,
+    duplicateProjects: duplicateIds.size,
+    dormantProjects: dormant,
+    missingIntent,
+    total: pairs.size + dormant + missingIntent,
+  }
+}
+refreshTidy()
 const files = new Map([
   ['/preview.js', [path.join(root, 'dev', 'preview-client.js'), 'text/javascript; charset=utf-8']],
   ['/client.js', [clientPath, 'text/javascript; charset=utf-8']],
@@ -67,7 +120,7 @@ async function readJson(req) {
 }
 function syntheticPatch(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-  const allowed = new Set(['note', 'tags', 'status', 'pinned', 'hidden', 'lifecycle', 'intent', 'earthAnchor'])
+  const allowed = new Set(['note', 'tags', 'status', 'pinned', 'hidden', 'lifecycle', 'intent', 'name', 'earthAnchor'])
   if (Object.keys(value).some((key) => !allowed.has(key))) return null
   const patch = {}
   for (const [key, val] of Object.entries(value)) {
@@ -75,7 +128,7 @@ function syntheticPatch(value) {
     else if (key === 'earthAnchor' && val && typeof val === 'object' && !Array.isArray(val)
       && typeof val.lat === 'number' && Number.isFinite(val.lat) && val.lat >= -90 && val.lat <= 90
       && typeof val.lon === 'number' && Number.isFinite(val.lon) && val.lon >= -180 && val.lon <= 180) patch[key] = { lat: val.lat, lon: val.lon }
-    else if (['note', 'status', 'lifecycle', 'intent'].includes(key) && typeof val === 'string' && val.length <= 16000) patch[key] = val
+    else if (['note', 'status', 'lifecycle', 'intent', 'name'].includes(key) && typeof val === 'string' && val.length <= 16000) patch[key] = val
     else if (['pinned', 'hidden'].includes(key) && typeof val === 'boolean') patch[key] = val
     else if (key === 'tags' && Array.isArray(val) && val.length <= 100 && val.every((tag) => typeof tag === 'string' && tag.length <= 200)) patch[key] = val
     else return null
@@ -93,15 +146,34 @@ const server = http.createServer(async (req, res) => {
     const project = mock.find((item) => item.id === payload?.id)
     const patch = syntheticPatch(payload?.patch)
     if (!project || !patch) return send(400, 'application/json', JSON.stringify({ ok: false, error: 'Only synthetic projects and supported fields are allowed' }))
-    const { intent, ...fields } = patch
+    const { intent, name, ...fields } = patch
     Object.assign(project, fields)
     if (intent !== undefined) project.identity = { ...project.identity, intent }
+    if (name !== undefined) project.displayName = name
     return send(200, 'application/json', JSON.stringify({ ok: true, project }))
+  }
+  if (req.method === 'POST' && url.pathname === '/dsh-workbench/api/project-merge' && saveMode !== 'readonly') {
+    if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) return send(415, 'application/json', JSON.stringify({ ok: false, error: 'JSON required' }))
+    if (saveDelayMs) await new Promise((resolve) => setTimeout(resolve, saveDelayMs))
+    if (saveMode === 'failure') return send(503, 'application/json', JSON.stringify({ ok: false, error: 'Simulated merge failure' }))
+    const payload = await readJson(req)
+    const target = mock.find((item) => item.id === payload?.targetId)
+    const source = mock.find((item) => item.id === payload?.sourceId)
+    if (!target || !source || target.id === source.id) return send(400, 'application/json', JSON.stringify({ ok: false, error: 'invalid synthetic merge' }))
+    const folders = Array.isArray(target.folders) ? target.folders : [{ path: target.path, role: 'main', primary: true }]
+    if (!folders.some((item) => String(item.path || item).toLowerCase() === String(source.path).toLowerCase())) {
+      folders.push({ path: source.path, role: 'code', primary: false })
+    }
+    target.folders = folders
+    target.folderCount = folders.length
+    source.hidden = true
+    source.mergedInto = target.id
+    return send(200, 'application/json', JSON.stringify({ ok: true, targetId: target.id, sourceId: source.id, folders }))
   }
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(405, 'text/plain', 'Preview operation not supported')
   if (url.pathname === '/') return send(200, 'text/html; charset=utf-8', previewHtml)
   if (url.pathname === '/modules.js') return send(200, 'text/javascript; charset=utf-8', bundle)
-  if (url.pathname === '/dsh-workbench/api/state') return send(200, 'application/json', JSON.stringify(state))
+  if (url.pathname === '/dsh-workbench/api/state') { refreshTidy(); return send(200, 'application/json', JSON.stringify(state)) }
   if (url.pathname === '/dsh-workbench/api/project-media') return send(200, 'application/json', JSON.stringify({ ok: true, artifacts: [], images: [] }))
   if (url.pathname === '/dsh-workbench/api/skills') return send(200, 'application/json', JSON.stringify({ skills: [], roots: [] }))
   const file = files.get(url.pathname)
