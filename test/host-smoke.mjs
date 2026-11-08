@@ -11,6 +11,7 @@ const fixture = path.resolve('..', `.wb-verify-${process.pid}`)
 const linkedRoot = path.join(tmp, 'linked')
 const secondLinkedRoot = path.join(tmp, 'second-linked')
 const conventionRoot = path.resolve('..', `.wb-convention-${process.pid}`)
+const normalLinkedRoot = path.resolve('..', `.wb-normal-linked-${process.pid}`)
 const codexDb = path.join(tmp, 'codex-state.sqlite')
 const codexLog = path.join(tmp, 'codex-rollout.jsonl')
 await fs.writeFile(codexLog, [
@@ -33,7 +34,7 @@ codexSeed.prepare(`INSERT INTO threads VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).r
 codexSeed.close()
 process.env.DSH_WORKBENCH_CODEX_DB = codexDb
 process.on('exit', () => {
-  for (const target of [fixture, conventionRoot, tmp]) {
+  for (const target of [fixture, conventionRoot, normalLinkedRoot, tmp]) {
     try { rmSync(target, { recursive: true, force: true }) } catch { /* best effort */ }
   }
 })
@@ -41,12 +42,24 @@ await fs.mkdir(path.join(fixture, 'output'), { recursive: true })
 await fs.mkdir(path.join(linkedRoot, 'output'), { recursive: true })
 await fs.mkdir(path.join(secondLinkedRoot, 'output'), { recursive: true })
 await fs.mkdir(path.join(conventionRoot, 'output'), { recursive: true })
+await fs.mkdir(path.join(normalLinkedRoot, 'output'), { recursive: true })
 await fs.writeFile(path.join(fixture, 'output', 'result.png'), Buffer.from('89504e470d0a1a0a', 'hex'))
 await fs.writeFile(path.join(fixture, 'output', 'main-only.png'), Buffer.from('main only'))
 await fs.writeFile(path.join(linkedRoot, 'output', 'result.png'), Buffer.from('linked image'))
 await fs.writeFile(path.join(linkedRoot, 'output', 'linked-only.png'), Buffer.from('only linked'))
 await fs.writeFile(path.join(secondLinkedRoot, 'output', 'result.png'), Buffer.from('second linked image'))
 await fs.writeFile(path.join(conventionRoot, 'output', 'result.png'), Buffer.from('convention'))
+for (let index = 0; index < 100; index += 1) {
+  await fs.writeFile(path.join(conventionRoot, 'output', `bulk-${String(index).padStart(3, '0')}.png`), Buffer.from('bulk'))
+}
+const junctionPath = path.join(fixture, 'linked-junction')
+let junctionCreated = false
+try {
+  await fs.symlink(linkedRoot, junctionPath, 'junction')
+  junctionCreated = true
+} catch {
+  // Creating a junction can be denied on locked-down Windows accounts.
+}
 await fs.writeFile(path.join(tmp, 'overrides.json'), JSON.stringify({ p2: { folders: [{ path: linkedRoot, role: 'output' }, { path: secondLinkedRoot, role: 'output' }] } }), 'utf8')
 await fs.writeFile(path.join(fixture, 'workbench.project.json'), JSON.stringify({
   schemaVersion: 1,
@@ -262,6 +275,30 @@ if (!routes.has('/dsh-workbench/api/project-media')) throw new Error('project-me
 const projectMedia = await call('GET', '/dsh-workbench/api/project-media?id=p2')
 if (projectMedia.status !== 200 || projectMedia.body.ok !== true || !projectMedia.body.items?.some((item) => item.path === 'output/result.png')) {
   throw new Error('project media scan failed: ' + JSON.stringify(projectMedia.body))
+}
+if (junctionCreated && projectMedia.body.items.some((item) => String(item.path).includes('linked-junction'))) {
+  throw new Error(`project media followed a junction: ${JSON.stringify(projectMedia.body.items)}`)
+}
+const conventionMedia = await call('GET', '/dsh-workbench/api/project-media?id=p3')
+if (conventionMedia.status !== 200 || conventionMedia.body.scan?.truncated !== true) {
+  throw new Error(`media scan did not mark its item cap as truncated: ${JSON.stringify(conventionMedia.body.scan)}`)
+}
+const normalLinkPath = normalLinkedRoot
+const normalLink = await call('POST', '/dsh-workbench/api/project-folders', {
+  id: 'p2', path: normalLinkPath, role: 'output',
+})
+if (normalLink.status !== 200) {
+  throw new Error(`a normal linked folder was rejected: ${normalLink.status} ${JSON.stringify(normalLink.body)}`)
+}
+const normalUnlink = await call('DELETE', '/dsh-workbench/api/project-folders', { id: 'p2', path: normalLinkPath })
+if (normalUnlink.status !== 200) throw new Error(`a normal linked folder could not be removed: ${JSON.stringify(normalUnlink.body)}`)
+if (junctionCreated) {
+  const junctionLink = await call('POST', '/dsh-workbench/api/project-folders', {
+    id: 'p2', path: path.join(junctionPath, 'output'), role: 'output',
+  })
+  if (junctionLink.status !== 403) {
+    throw new Error(`a folder behind a junction was accepted: ${junctionLink.status} ${JSON.stringify(junctionLink.body)}`)
+  }
 }
 const mediaItem = projectMedia.body.items.find((item) => item.path === 'output/result.png')
 if (!mediaItem.url?.includes('folder=')) throw new Error('project media folder index missing')

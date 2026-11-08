@@ -143,7 +143,7 @@ function detectMarkers(entries) {
 }
 
 /** Recursively collect candidate project directories. */
-async function collectCandidates(root, maxDepth, warnings, config = DEFAULT_CONFIG) {
+export async function collectCandidates(root, maxDepth, warnings, config = DEFAULT_CONFIG) {
   const out = []
   const rootAbs = norm(root)
   async function visit(dir, depth) {
@@ -161,6 +161,13 @@ async function collectCandidates(root, maxDepth, warnings, config = DEFAULT_CONF
       if (isReparse(e)) continue
       const full = path.join(dir, e.name)
       if (shouldSkipPath(full, config)) continue
+      // Windows junctions are not always reported as symlinks by Dirent.
+      // lstat prevents descending into a directory that only appears to be
+      // inside the configured scan root.
+      try {
+        const st = await fs.lstat(full)
+        if (!st.isDirectory() || st.isSymbolicLink()) continue
+      } catch { continue }
       dirs.push({ name: e.name, full })
     }
 

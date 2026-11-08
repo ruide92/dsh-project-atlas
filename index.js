@@ -384,6 +384,12 @@ async function recentFiles(dir, depth = 1, bucket = { count: 0, files: [] }) {
     if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === '.dsh') continue
     const file = path.join(dir, entry.name)
     if (entry.isDirectory()) {
+      // A junction can be reported as a directory; do not follow it out of
+      // the project just to collect recent artifacts.
+      try {
+        const dirStat = await fs.lstat(file)
+        if (!dirStat.isDirectory() || dirStat.isSymbolicLink()) continue
+      } catch { continue }
       if (depth > 0) await recentFiles(file, depth - 1, bucket)
       continue
     }
@@ -1119,6 +1125,14 @@ async function handleProjectFolders(req, res) {
   if (!insideProject) {
     const blocked = protectedReason(target)
     if (blocked) { sendJson(res, 403, { ok: false, error: blocked }); return }
+  }
+  // Reject a path that only looks contained because a parent directory is a
+  // symlink/junction. Checking lstat(target) alone is insufficient here: the
+  // final entry can be a real directory while its parent points elsewhere.
+  const symlinkScope = insideProject ? path.resolve(project.path) : path.parse(target).root
+  if (await hasSymlinkComponent(symlinkScope, target)) {
+    sendJson(res, 403, { ok: false, error: '路径包含符号链接或目录联接，已拒绝关联' })
+    return
   }
   try {
     const linkStat = await fs.lstat(target)
@@ -2194,7 +2208,12 @@ async function scanProjectMedia(project) {
         if (!name || name.startsWith('.')) continue
         if (entry.isDirectory()) {
           if (current.depth >= 4 || MEDIA_SKIP_DIRS.has(name.toLowerCase())) continue
-          stack.push({ dir: path.join(current.dir, name), depth: current.depth + 1 })
+          const child = path.join(current.dir, name)
+          try {
+            const dirStat = await fs.lstat(child)
+            if (!dirStat.isDirectory() || dirStat.isSymbolicLink()) continue
+          } catch { continue }
+          stack.push({ dir: child, depth: current.depth + 1 })
           continue
         }
         if (!entry.isFile()) continue
@@ -2223,6 +2242,7 @@ async function scanProjectMedia(project) {
           url: '/dsh-workbench/api/artifact?id=' + encodeURIComponent(project.id) + '&path=' + encodeURIComponent(relative) + '&folder=' + folder,
         })
       }
+      if (items.length >= maxItems) { truncated = true; break }
     }
     if (entries >= maxEntries) truncated = true
   }
@@ -2634,8 +2654,13 @@ async function handleSkillOpen(req, res) {
     if (!detail) { sendJson(res, 404, { ok: false, error: '技能不存在或索引已过期，请刷新技能库' }); return }
     const target = path.resolve(detail.dir || path.dirname(detail.path))
     if (!isSkillPath(target)) { sendJson(res, 403, { ok: false, error: 'path is not a scanned skill root' }); return }
-    const st = await fs.stat(target)
-    if (!st.isDirectory() && !st.isFile()) throw new Error('unsupported path')
+    const st = await fs.lstat(target)
+    if (st.isSymbolicLink() || (!st.isDirectory() && !st.isFile())) throw new Error('unsupported path')
+    const [realTarget, realFile] = await Promise.all([fs.realpath(target), fs.realpath(detail.path)])
+    if (!isSkillPath(realTarget) || !isSameOrInside(realFile, realTarget)) {
+      sendJson(res, 403, { ok: false, error: '技能路径越界，已拒绝' })
+      return
+    }
     execFile('explorer.exe', [target], { windowsHide: true }, () => {})
     sendJson(res, 200, { ok: true, path: target })
   } catch (error) {

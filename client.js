@@ -1732,6 +1732,53 @@ window.__ModuleLoader__.load({
       return `${v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)} ${units[i]}`
     }
     const fmtGiB = (n) => n ? (n / 1024 ** 3).toFixed(1) + ' GiB' : '—'
+
+    // Keep the project row and the open workspace on the same folder list.
+    // The old implementation only updated the selected project, so the next
+    // state refresh silently reverted a folder the user had just linked.
+    function mergeProjectFolders(project, linked) {
+      if (!project) return project
+      const norm = (value) => String(value || '').replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase()
+      const main = (project.folders || []).find((folder) => folder?.primary)
+        || { path: project.path, role: 'main', primary: true }
+      const folders = [main]
+      const seen = new Set([norm(main.path)])
+      for (const item of Array.isArray(linked) ? linked : []) {
+        const folderPath = typeof item === 'string' ? item : item?.path
+        if (!folderPath) continue
+        const key = norm(folderPath)
+        if (!key || seen.has(key)) continue
+        seen.add(key)
+        folders.push({
+          path: folderPath,
+          role: typeof item === 'object' && item?.role ? String(item.role) : 'reference',
+          primary: false,
+        })
+      }
+      return { ...project, folders, folderCount: folders.length }
+    }
+
+    // Recompute the counters shown above the table after a local override.
+    // The server computes these on /state; without this, marking a project
+    // archived left the "active" KPI stale until a full refresh.
+    function recountProjectStats(projects, base = {}) {
+      const visible = (Array.isArray(projects) ? projects : []).filter((project) =>
+        project.topLevel && !project.hidden && !project.noise && !project.container)
+      const count = (status) => visible.filter((project) => project.status === status).length
+      const sum = (key) => visible.reduce((total, project) => total + (Number(project[key]) || 0), 0)
+      return {
+        ...base,
+        projectCount: visible.length,
+        topLevelCount: visible.length,
+        active: count('active'),
+        paused: count('paused'),
+        archived: count('archived'),
+        unknown: count('unknown'),
+        totalBytes: sum('sizeBytes'),
+        folderCount: visible.reduce((total, project) => total + (project.folderCount || 1), 0),
+        sessionCount: sum('sessionCount'),
+      }
+    }
     function useProjectMedia(projectId, revision = '') {
       const [state, setState] = useState({ status: 'idle', data: null, error: '' })
       const requestRef = useRef(0)
@@ -10181,25 +10228,43 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         toastTimer.current = setTimeout(() => setToast(''), 2600)
       }, [])
 
+      const loadTicket = useRef(0)
+      const loadAbort = useRef(null)
+      const loadRetry = useRef(null)
       const load = useCallback(async (silent) => {
+        const ticket = ++loadTicket.current
+        clearTimeout(loadRetry.current)
+        // A refresh or a save-triggered reload must not let an older /state
+        // response overwrite the newer project data. Abort the old request and
+        // ignore any response that still arrives late.
+        loadAbort.current?.abort()
+        const controller = new AbortController()
+        loadAbort.current = controller
         if (!silent) setLoading(true)
         try {
-          const r = await fetch(`${API}/state`, { cache: 'no-store' })
+          const r = await fetch(`${API}/state`, { cache: 'no-store', signal: controller.signal })
           if (!r.ok) throw new Error(`HTTP ${r.status}`)
           const j = await r.json()
+          if (ticket !== loadTicket.current) return false
           setData(j); setError('')
           // DSH session metadata can still be warming up on the first request
           // after a plugin reload. Refresh once quietly instead of leaving the
           // session KPI at zero until the user presses refresh.
           if (!silent && (j.projects || []).length && j.stats?.sessionCount === 0) {
-            setTimeout(() => load(true), 1500)
+            loadRetry.current = setTimeout(() => load(true), 1500)
           }
           return true
         } catch (e) {
+          if (ticket !== loadTicket.current || e?.name === 'AbortError') return false
           setError(tr('apiError') + ': ' + e.message)
           return false
-        } finally { if (!silent) setLoading(false) }
+        } finally { if (!silent && ticket === loadTicket.current) setLoading(false) }
       }, [tr])
+      useEffect(() => () => {
+        loadTicket.current += 1
+        loadAbort.current?.abort()
+        clearTimeout(loadRetry.current)
+      }, [])
 
       useEffect(() => { load() }, [load])
       useEffect(() => {
@@ -10238,7 +10303,11 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
           const j = await r.json()
           const notePatch = patch && Object.prototype.hasOwnProperty.call(patch, 'note') ? { note: String(patch.note || '') } : null
           const projectView = notePatch ? { ...j.project, ...notePatch } : j.project
-          setData((d) => d ? { ...d, projects: d.projects.map((p) => p.id === id ? { ...p, ...projectView } : p) } : d)
+          setData((d) => {
+            if (!d) return d
+            const projects = d.projects.map((p) => p.id === id ? { ...p, ...projectView } : p)
+            return { ...d, projects, stats: recountProjectStats(projects, d.stats) }
+          })
           setSelected((s) => s && s.id === id ? { ...s, ...projectView } : s)
           // Notes are workbench-local annotations. Never mirror them into the
           // project directory; opening an AI session is the only handoff path.
@@ -10268,29 +10337,33 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         } catch (e) { notify(tr('openFailed') + ': ' + e.message) }
       }, [tr, notify])
 
+      const applyLinkedFolders = useCallback((id, folders) => {
+        setData((d) => {
+          if (!d) return d
+          const projects = d.projects.map((p) => p.id === id ? mergeProjectFolders(p, folders) : p)
+          return { ...d, projects, stats: recountProjectStats(projects, d.stats) }
+        })
+        setSelected((s) => s && s.id === id ? mergeProjectFolders(s, folders) : s)
+        // A media scan is rooted in these folders; an old cached gallery would
+        // otherwise keep showing the previous roots for up to 45 seconds.
+        invalidateProjectMedia(id)
+      }, [])
+
       const linkFolder = useCallback(async (id, folderPath, role) => {
         const r = await fetch(`${API}/project-folders`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, path: folderPath, role }) })
         const j = await r.json().catch(() => ({}))
         if (!r.ok || j.ok === false) return { ok: false, error: j.error || `HTTP ${r.status}` }
-        setSelected((s) => {
-          if (!s || s.id !== id) return s
-          const main = (s.folders || []).find((f) => f.primary) || { path: s.path, role: 'main', primary: true }
-          return { ...s, folders: [main, ...(j.folders || [])], folderCount: 1 + (j.folders || []).length }
-        })
+        applyLinkedFolders(id, j.folders || [])
         return { ok: true }
-      }, [])
+      }, [applyLinkedFolders])
 
       const unlinkFolder = useCallback(async (id, folderPath) => {
         const r = await fetch(`${API}/project-folders`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, path: folderPath }) })
         const j = await r.json().catch(() => ({}))
         if (!r.ok || j.ok === false) return { ok: false, error: j.error || `HTTP ${r.status}` }
-        setSelected((s) => {
-          if (!s || s.id !== id) return s
-          const main = (s.folders || []).find((f) => f.primary) || { path: s.path, role: 'main', primary: true }
-          return { ...s, folders: [main, ...(j.folders || [])], folderCount: 1 + (j.folders || []).length }
-        })
+        applyLinkedFolders(id, j.folders || [])
         return { ok: true }
-      }, [])
+      }, [applyLinkedFolders])
 
       const linkSession = useCallback(async (id, sessionId, source = 'dsh') => {
         const r = await fetch(`${API}/project-sessions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, sessionId, source }) })
@@ -10918,7 +10991,7 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
             h('div', { className: 'wb-brand' },
               h('div', { className: 'wb-brand-mark' }, h(WorkbenchGlyph, { size: 21 })),
               h('div', { style: { minWidth: 0 } },
-                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.2.0')),
+                h('div', { className: 'wb-title' }, tr('title'), h('span', { className: 'wb-version' }, 'v1.3.0')),
                 h('div', { className: 'wb-subtitle' }, tr('subtitle')))),
             h('div', { className: 'wb-header-spacer' }),
             h('div', { className: 'wb-scan-state' },
@@ -11118,6 +11191,8 @@ body.wb-earth-panorama .u_dock{opacity:0!important;visibility:hidden!important;p
         libraryPage,
         libraryShelf,
         LIBRARY_PAGE_SIZE,
+        mergeProjectFolders,
+        recountProjectStats,
       }
     }
 

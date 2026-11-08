@@ -154,6 +154,13 @@ async function walk(root, maxDepth, out, seen) {
       const full = path.join(dir, entry.name)
       if (entry.isDirectory()) {
         if (depth >= maxDepth || SKIP_DIRS.has(entry.name)) continue
+        // Windows junctions can be reported as directories by readdir. lstat
+        // is the only reliable way to keep the walk inside the configured
+        // skill root and avoid indexing an outside directory.
+        try {
+          const dirStat = await fs.lstat(full)
+          if (!dirStat.isDirectory() || dirStat.isSymbolicLink()) continue
+        } catch { continue }
         stack.push({ dir: full, depth: depth + 1 })
       } else if (entry.isFile() && /^skill\.md$/i.test(entry.name)) {
         out.push(full)
@@ -162,12 +169,22 @@ async function walk(root, maxDepth, out, seen) {
   }
 }
 
+export async function skillFileInside(file, root) {
+  const st = await fs.lstat(file)
+  if (!st.isFile() || st.isSymbolicLink()) return false
+  const [realRoot, realFile] = await Promise.all([fs.realpath(root), fs.realpath(file)])
+  return underRoot(realFile, realRoot)
+}
+
 async function readSkill(file, def) {
   let text = ''
   let st
   try {
-    st = await fs.stat(file)
-    if (st.size > 512 * 1024) return null
+    // A SKILL.md discovered during a scan can be replaced by a symlink (or
+    // reached through a junction) before it is read. Check the real path too.
+    st = await fs.lstat(file)
+    if (!st.isFile() || st.isSymbolicLink() || st.size > 512 * 1024) return null
+    if (!(await skillFileInside(file, def.root))) return null
     text = await fs.readFile(file, 'utf8')
   } catch { return null }
   const { meta, body } = parseFrontmatter(text)
@@ -285,6 +302,9 @@ export async function getSkillDetail(id) {
   const row = cache.byId.get(String(id || ''))
   if (!row) return null
   try {
+    const st = await fs.lstat(row.path)
+    if (!st.isFile() || st.isSymbolicLink()) throw new Error('技能文件已经变化，请刷新技能库')
+    if (!(await skillFileInside(row.path, row.root))) throw new Error('技能文件路径越界，已拒绝')
     const text = await fs.readFile(row.path, 'utf8')
     return { ...row, content: text.slice(0, 120_000), truncated: text.length > 120_000 }
   } catch (error) {
