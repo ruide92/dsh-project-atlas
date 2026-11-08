@@ -27,7 +27,7 @@ Project Atlas 是一个 DeepSeek Harness（DSH）插件：把本机的 AI 项目
 
 市场页：https://awesome-dsh-plugin.com/p/ruide92/dsh-project-atlas/
 
-> 市场条目需要维护者合并并重建目录；如果暂时搜索不到，请使用下面的手动安装。仓库和 Release 已经可直接下载。
+> 市场目录可能有同步延迟；如果暂时搜索不到或版本尚未更新，请使用下面的手动安装。仓库和 Release 已经可直接下载。
 
 ### 手动安装
 
